@@ -1,0 +1,70 @@
+"use client";
+
+interface PoolStat {
+  label: string;
+  value: string;
+  subtitle: string;
+  dotColor: string;
+  valueColor?: string;
+}
+
+interface PoolHeaderProps {
+  title: string;
+  closesDate: string;
+  perPerson: string;
+  category: string;
+  stats: PoolStat[];
+}
+
+export default function PoolHeader({
+  title,
+  closesDate,
+  perPerson,
+  category,
+  stats,
+}: PoolHeaderProps) {
+  return (
+    <div className="bg-primary rounded-2xl p-6 relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-[200px] h-[140px] rounded-full bg-white/[0.04]" />
+
+      <p className="text-[10px] font-bold tracking-[1px] uppercase text-white/60 mb-1">
+        🎯 Goal Pool · Admin View
+      </p>
+      <h2 className="font-heading text-lg font-bold tracking-[-0.3px] text-white leading-snug mb-1.5">
+        {title}
+      </h2>
+      <div className="flex items-center gap-2 text-white/55 text-[11px] mb-5">
+        <span>📅 {closesDate}</span>
+        <span>·</span>
+        <span>💰 {perPerson}</span>
+        <span>·</span>
+        <span>{category}</span>
+      </div>
+
+      <div className="flex gap-[23px]">
+        {stats.map((stat, i) => (
+          <div
+            key={i}
+            className="flex-1 bg-white/10 border border-white/12 rounded-xl p-4"
+          >
+            <div className="flex items-center gap-2 mb-1.5">
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: stat.dotColor }}
+              />
+              <span className="text-white/55 text-[10.5px] font-medium tracking-[0.8px] uppercase">
+                {stat.label}
+              </span>
+            </div>
+            <p
+              className={`font-heading text-xl font-bold tracking-[-0.5px] leading-[25px] ${stat.valueColor || "text-white"}`}
+            >
+              {stat.value}
+            </p>
+            <p className="text-white/40 text-[11px] mt-1">{stat.subtitle}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
