@@ -100,7 +100,7 @@ export default function Sidebar() {
                   />
                   <span>{item.label}</span>
                   {item.badge && (
-                    <span className="ml-auto bg-danger text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                    <span className="ml-auto bg-warning text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">
                       {item.badge}
                     </span>
                   )}

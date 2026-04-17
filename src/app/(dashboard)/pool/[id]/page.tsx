@@ -9,6 +9,8 @@ import {
   completedPoolDashboard,
 } from "@/src/data/poolDashboardData";
 import DownloadIcon from "@/src/assets/icons/download.svg";
+import NotificationIcon from "@/src/assets/icons/notification.svg";
+import SettingsIcon from "@/src/assets/icons/settings.svg";
 
 function getPoolData(id: string) {
   if (id === "2") return completedPoolDashboard;
@@ -68,18 +70,18 @@ export default function PoolDashboardPage({
           {pool.isCompleted ? (
             <>
               <button
-                className="w-10 h-10 rounded-full border border-border flex items-center justify-center hover:bg-gray-50 transition-colors"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-text-muted hover:bg-gray-100 transition-colors"
                 aria-label="Notifications"
               >
-                🔔
+                <NotificationIcon className="w-5 h-5 text-text-muted" />
               </button>
               <button
-                className="w-10 h-10 rounded-full border border-border flex items-center justify-center hover:bg-gray-50 transition-colors"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-text-muted hover:bg-gray-100 transition-colors"
                 aria-label="Settings"
               >
-                ⚙️
+                <SettingsIcon className="w-5 h-5 text-text-muted" />
               </button>
-              <button className="flex items-center gap-2 border border-border text-text-dark px-5 py-2.5 rounded-full text-[13px] font-bold hover:bg-gray-50 transition-colors">
+              <button className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-full text-[13px] font-bold hover:bg-primary-dark transition-colors">
                 <DownloadIcon className="w-5 h-5" />
                 Export CSV
               </button>

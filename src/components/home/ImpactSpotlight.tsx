@@ -57,7 +57,7 @@ export default function ImpactSpotlight({ pool }: ImpactSpotlightProps) {
         </div>
 
         <div className="flex justify-between items-center mb-5">
-          <span className="text-black text-xs font-bold">
+          <span className="text-white text-xs font-bold">
             {formatCurrency(pool.raised)} raised
           </span>
           <span className="text-white/60 text-[11px]">

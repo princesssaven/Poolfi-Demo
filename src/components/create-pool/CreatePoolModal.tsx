@@ -36,7 +36,11 @@ export default function CreatePoolModal({
               : "border-border bg-white hover:border-gray-300"
           }`}
         >
-          <div className="w-[52px] h-[52px] rounded-xl bg-primary-light flex items-center justify-center">
+          <div
+            className={`w-[52px] h-[52px] rounded-xl flex items-center justify-center ${
+              selected === "goal" ? "bg-white shadow-sm" : "bg-gray-100"
+            }`}
+          >
             <GoalPoolIcon className="w-[30px] h-[30px] text-text-dark" />
           </div>
           <div className="text-center">
@@ -57,7 +61,11 @@ export default function CreatePoolModal({
               : "border-border bg-white hover:border-gray-300"
           }`}
         >
-          <div className="w-[52px] h-[52px] rounded-xl bg-primary-light flex items-center justify-center">
+          <div
+            className={`w-[52px] h-[52px] rounded-xl flex items-center justify-center ${
+              selected === "impact" ? "bg-white shadow-sm" : "bg-gray-100"
+            }`}
+          >
             <ImpactPoolIcon className="w-6 h-6 text-text-dark" />
           </div>
           <div className="text-center">

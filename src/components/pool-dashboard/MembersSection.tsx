@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import ActivityTab from "./ActivityTab";
+import ActivityTab, { PoolActivityItem } from "./ActivityTab";
 import SettingsTab from "./SettingsTab";
 import DangerZoneTab from "./DangerZoneTab";
 
@@ -29,75 +29,37 @@ interface MembersSectionProps {
 
 const tabs = ["Members", "Activity", "Settings", "Danger Zone"] as const;
 
-const mockActivities = [
+// Activity feed matching Figma design exactly
+const mockActivities: PoolActivityItem[] = [
   {
-    initials: "EO",
-    name: "Emeka Obi",
-    action: "Paid ₦1,000 contribution",
-    time: "Today · 9:14am",
-    amount: "+₦1,000",
-    amountType: "credit" as const,
-    bgColor: "#1b4fd8",
+    dotColor: "#12b76a",
+    mainText: "Adaeze Okonkwo paid ₦2,000 ✓",
+    isBold: true,
+    timeText: "Today, 2:14 PM · Tx: 0xf3a4...d91b",
   },
   {
-    initials: "CN",
-    name: "Chidi Nwosu",
-    action: "Paid ₦1,000 contribution",
-    time: "Today · 9:16am",
-    amount: "+₦1,000",
-    amountType: "credit" as const,
-    bgColor: "#12b76a",
+    dotColor: "#fcd34d",
+    mainText: "Emeka Nwosu joined the pool (Not yet paid)",
+    isBold: true,
+    timeText: "Today, 1:47 PM",
   },
   {
-    initials: "SY",
-    name: "System",
-    action: "Auto-reminder sent to 87 pending members",
-    time: "Today · 8:00am",
-    bgColor: "#6b7280",
+    dotColor: "#1b4fd8",
+    mainText: "47 reminder messages sent to unpaid members",
+    isBold: false,
+    timeText: "Yesterday, 9:00 AM",
   },
   {
-    initials: "AE",
-    name: "Amaka Eze",
-    action: "Paid ₦1,000 contribution",
-    time: "Yesterday · 3:42pm",
-    amount: "+₦1,000",
-    amountType: "credit" as const,
-    bgColor: "#f79009",
+    dotColor: "#12b76a",
+    mainText: "Ifeanyi Obi paid ₦2,000 ✓",
+    isBold: true,
+    timeText: "Today, 2:14 PM · Tx: 0xf3a4...d91b",
   },
   {
-    initials: "FO",
-    name: "Femi Okonkwo",
-    action: "Paid ₦1,000 contribution",
-    time: "Yesterday · 2:18pm",
-    amount: "+₦1,000",
-    amountType: "credit" as const,
-    bgColor: "#6b7280",
-  },
-  {
-    initials: "PS",
-    name: "Princess Saven (You)",
-    action: "Extended pool deadline by 5 days",
-    time: "Feb 16 · 11:00am",
-    amountType: "info" as const,
-    bgColor: "#1b4fd8",
-  },
-  {
-    initials: "BA",
-    name: "Bisi Adeleke",
-    action: "Paid ₦1,000 contribution",
-    time: "Feb 16 · 10:32am",
-    amount: "+₦1,000",
-    amountType: "credit" as const,
-    bgColor: "#7c3aed",
-  },
-  {
-    initials: "UI",
-    name: "Uche Ibe",
-    action: "Paid ₦1,000 contribution",
-    time: "Feb 15 · 4:55pm",
-    amount: "+₦1,000",
-    amountType: "credit" as const,
-    bgColor: "#047857",
+    dotColor: "#1b4fd8",
+    mainText: "Pool created — 400 member slots pre-loaded",
+    isBold: false,
+    timeText: "5 Jul 2025, 10:00 AM",
   },
 ];
 
@@ -109,7 +71,6 @@ export default function MembersSection({
   poolName = "300L Class Dues",
   perPerson = "₦1,000",
   closesDate = "Feb 28, 2026",
-  category = "🎓 Education",
   raised = 312000,
   target = 400000,
   isCompleted = false,
@@ -127,7 +88,10 @@ export default function MembersSection({
   const filteredMembers = members.filter((m) => {
     if (activeFilter === "paid" && m.status !== "paid") return false;
     if (activeFilter === "pending" && m.status !== "pending") return false;
-    if (searchQuery && !m.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    if (
+      searchQuery &&
+      !m.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
       return false;
     return true;
   });
@@ -136,43 +100,65 @@ export default function MembersSection({
     <div className="border border-border rounded-2xl overflow-hidden">
       {/* Tabs */}
       <div className="flex border-b border-border">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-5 py-4 text-[13px] font-semibold font-card transition-colors ${
-              activeTab === tab
-                ? "text-primary border-b-2 border-primary"
-                : tab === "Danger Zone"
-                ? "text-danger/70 hover:text-danger"
-                : "text-text-muted hover:text-text-dark"
-            }`}
-          >
-            {tab === "Members" ? `Members (${totalMembers})` : tab}
-          </button>
-        ))}
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab;
+          const label = tab === "Members" ? `Members (${totalMembers})` : tab;
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-5 py-4 text-[13px] font-semibold font-card transition-colors relative ${
+                isActive
+                  ? "text-primary"
+                  : tab === "Danger Zone"
+                  ? "text-text-muted hover:text-danger"
+                  : "text-text-muted hover:text-text-dark"
+              }`}
+              aria-selected={isActive}
+              role="tab"
+            >
+              {label}
+              {isActive && (
+                <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary rounded-t-full" />
+              )}
+            </button>
+          );
+        })}
       </div>
 
+      {/* Members Tab */}
       {activeTab === "Members" && (
         <div className="p-5">
-          {/* Search + filters */}
+          {/* Toolbar */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 border border-border rounded-[10px] px-3 py-2">
-                <span className="text-base">🔍</span>
+              {/* Search */}
+              <div className="flex items-center gap-2 border border-border rounded-[10px] px-3 py-2 bg-white">
+                <span className="text-sm text-text-muted" aria-hidden="true">
+                  🔍
+                </span>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search Members"
-                  className="text-sm font-card text-text-dark placeholder:text-text-muted focus:outline-none w-[120px]"
+                  className="text-sm font-card text-text-dark placeholder:text-text-muted focus:outline-none w-[130px]"
+                  aria-label="Search members"
                 />
               </div>
-              <select className="border border-border rounded-[10px] px-3 py-2.5 text-sm font-card text-text-dark focus:outline-none bg-white">
+              {/* Filter dropdown */}
+              <select
+                className="border border-border rounded-[10px] px-3 py-2.5 text-sm font-card text-text-dark focus:outline-none bg-white cursor-pointer"
+                aria-label="Filter members"
+              >
                 <option>All Members</option>
+                <option>Paid Members</option>
+                <option>Pending Members</option>
               </select>
             </div>
-            <button className="flex items-center gap-1 border border-border rounded-full px-4 py-2 text-xs font-bold text-text-dark hover:bg-gray-50 transition-colors">
+
+            {/* Remind All Unpaid */}
+            <button className="flex items-center gap-1.5 border border-border rounded-full px-4 py-2 text-xs font-bold text-text-dark hover:bg-gray-50 transition-colors">
               🔔 Remind All Unpaid
             </button>
           </div>
@@ -188,67 +174,81 @@ export default function MembersSection({
                     ? "bg-primary text-white"
                     : "bg-white border border-border text-text-muted hover:border-gray-300"
                 }`}
+                aria-pressed={activeFilter === f.key}
               >
                 {f.label}
               </button>
             ))}
           </div>
 
-          {/* Members list */}
+          {/* Member rows */}
           <div>
             {filteredMembers.map((member, i) => (
               <div
                 key={i}
-                className="flex items-center py-3.5 px-2 border-b border-border last:border-b-0 gap-3"
+                className="flex items-center py-3.5 border-b border-border last:border-b-0 gap-3"
               >
+                {/* Avatar */}
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0"
                   style={{ backgroundColor: member.bgColor }}
+                  aria-label={member.initials}
                 >
                   {member.initials}
                 </div>
+
+                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-bold text-text-dark truncate">
                     {member.name}
                   </p>
                   <p className="text-[10.5px] text-text-muted">{member.info}</p>
                 </div>
+
+                {/* Status + receipt */}
                 <div className="flex items-center gap-3 shrink-0">
                   <span
                     className={`text-[11px] font-bold ${
-                      member.status === "paid"
-                        ? "text-success"
-                        : "text-warning"
+                      member.status === "paid" ? "text-success" : "text-warning"
                     }`}
                   >
                     {member.status === "paid" ? "✓ Paid" : "Pending"}
                   </span>
-                  <span className="text-base cursor-pointer hover:opacity-70" title="View receipt">
+                  <button
+                    className="text-base hover:opacity-70 transition-opacity"
+                    title="View receipt"
+                    aria-label={`View receipt for ${member.name}`}
+                  >
                     🧾
-                  </span>
+                  </button>
                 </div>
               </div>
             ))}
+
+            {filteredMembers.length === 0 && (
+              <p className="text-center text-text-muted text-sm py-8">
+                No members found.
+              </p>
+            )}
           </div>
         </div>
       )}
 
+      {/* Activity Tab */}
       {activeTab === "Activity" && (
         <ActivityTab activities={mockActivities} />
       )}
 
+      {/* Settings Tab */}
       {activeTab === "Settings" && (
         <SettingsTab
-          poolName={poolName}
           perPerson={perPerson}
           closesDate={closesDate}
-          category={category}
-          autoClose={false}
           autoReminders={true}
-          allowAnonymous={false}
         />
       )}
 
+      {/* Danger Zone Tab */}
       {activeTab === "Danger Zone" && (
         <DangerZoneTab
           poolName={poolName}

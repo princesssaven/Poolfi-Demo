@@ -64,7 +64,7 @@ export default function YourPools({ pools }: YourPoolsProps) {
                       </p>
                     </div>
                   </div>
-                  <span className="text-[11px] font-bold text-success">
+                  <span className="text-[11px] font-bold text-success bg-success/10 border border-success/20 px-2.5 py-1 rounded-full">
                     Active
                   </span>
                 </div>

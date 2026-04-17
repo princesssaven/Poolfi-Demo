@@ -20,15 +20,15 @@ export default function AddMoneyModal({ isOpen, onClose }: AddMoneyModalProps) {
 
       <div className="px-8 pb-8 mt-5 flex flex-col gap-5">
         {/* Tabs */}
-        <div className="flex rounded-lg shadow-sm overflow-hidden">
+        <div className="flex items-center rounded-xl shadow-[0_1px_4.6px_rgba(0,0,0,0.25)] px-2 py-1.5 gap-2">
           {tabs.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-2 text-[13px] font-semibold font-card transition-colors ${
+              className={`flex-1 py-1.5 px-3 rounded-lg text-[13px] font-semibold font-card transition-all duration-200 ${
                 activeTab === tab
-                  ? "bg-white text-text-dark shadow-sm border border-border"
-                  : "bg-transparent text-text-dark hover:bg-gray-50"
+                  ? "bg-white text-text-dark shadow-sm"
+                  : "bg-transparent text-text-muted hover:text-text-dark"
               }`}
             >
               {tab}
