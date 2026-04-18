@@ -14,7 +14,7 @@ export default function CompletedPools({ pools }: CompletedPoolsProps) {
         {pools.map((pool, i) => (
           <div
             key={i}
-            className="flex items-center gap-4 border border-border rounded-xl bg-white px-5 py-4 hover:shadow-sm transition-shadow"
+            className="flex flex-col items-start gap-3 rounded-xl border border-border bg-white px-5 py-4 transition-shadow hover:shadow-sm sm:flex-row sm:items-center"
           >
             <span className="text-lg shrink-0">{pool.emoji}</span>
             <div className="flex-1 min-w-0">
@@ -25,12 +25,14 @@ export default function CompletedPools({ pools }: CompletedPoolsProps) {
                 {pool.details}
               </p>
             </div>
-            <span className="font-heading text-base font-bold text-success shrink-0">
-              {pool.amount}
-            </span>
-            <span className="text-[10px] font-bold text-success font-card shrink-0">
-              ✓ Done
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="font-heading text-base font-bold text-success shrink-0">
+                {pool.amount}
+              </span>
+              <span className="text-[10px] font-bold text-success font-card shrink-0">
+                ✓ Done
+              </span>
+            </div>
           </div>
         ))}
       </div>

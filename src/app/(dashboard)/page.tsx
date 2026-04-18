@@ -9,14 +9,14 @@ export default function HomePage() {
     <div>
       <BalanceCard {...data.balance} />
 
-      <div className="flex gap-6">
+      <div className="flex flex-col gap-6 xl:flex-row">
         {/* Left column */}
         <div className="flex-1 min-w-0">
           <YourPools pools={data.pools} />
         </div>
 
         {/* Right column */}
-        <div className="w-[384px] shrink-0 flex flex-col gap-6">
+        <div className="flex w-full shrink-0 flex-col gap-6 xl:w-[384px]">
           <ImpactSpotlight pool={data.featuredPool} />
           <RecentActivitySidebar activities={data.activities} />
         </div>

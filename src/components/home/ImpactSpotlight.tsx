@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface FeaturedPool {
   title: string;
   description: string;
@@ -18,17 +20,17 @@ export default function ImpactSpotlight({ pool }: ImpactSpotlightProps) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="font-heading text-base font-bold tracking-[-0.3px] text-text-dark">
           Impact Spotlight
         </h2>
-        <button className="text-primary text-[13px] font-bold hover:underline">
+        <Link href="/impact" className="text-primary text-[13px] font-bold hover:underline">
           Explore →
-        </button>
+        </Link>
       </div>
 
       <div
-        className="rounded-2xl p-6 relative overflow-hidden"
+        className="relative overflow-hidden rounded-2xl p-5 sm:p-6"
         style={{
           background:
             "linear-gradient(135deg, rgba(15,47,168,1) 0%, rgba(27,79,216,1) 60%, rgba(61,106,232,1) 100%)",
@@ -56,7 +58,7 @@ export default function ImpactSpotlight({ pool }: ImpactSpotlightProps) {
           />
         </div>
 
-        <div className="flex justify-between items-center mb-5">
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-white text-xs font-bold">
             {formatCurrency(pool.raised)} raised
           </span>
@@ -65,9 +67,9 @@ export default function ImpactSpotlight({ pool }: ImpactSpotlightProps) {
           </span>
         </div>
 
-        <button className="w-full bg-white text-primary text-[13px] font-bold py-3 rounded-full hover:bg-gray-100 transition-colors">
+        <Link href="/impact-contribution" className="block w-full bg-white text-primary text-[13px] font-bold py-3 rounded-full hover:bg-gray-100 transition-colors text-center">
           Contribute to this Pool →
-        </button>
+        </Link>
       </div>
     </div>
   );

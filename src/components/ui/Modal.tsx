@@ -34,13 +34,13 @@ export default function Modal({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] transition-opacity"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-[2px] transition-opacity sm:items-center"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl animate-in fade-in zoom-in-95 duration-200 w-full mx-4"
+        className="mx-2 max-h-[min(92vh,calc(100vh-1rem))] w-full overflow-y-auto rounded-t-2xl bg-white shadow-xl animate-in fade-in zoom-in-95 duration-200 sm:mx-4 sm:rounded-2xl"
         style={{ maxWidth }}
         role="dialog"
         aria-modal="true"
@@ -59,7 +59,7 @@ export function ModalHeader({
   onClose: () => void;
 }) {
   return (
-    <div className="flex items-start justify-between px-8 pt-8">
+    <div className="flex items-start justify-between px-5 pt-6 sm:px-8 sm:pt-8">
       <h2 className="font-heading text-[15px] font-bold text-text-dark">
         {title}
       </h2>

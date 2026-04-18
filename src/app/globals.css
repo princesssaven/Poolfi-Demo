@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-heading: "Sora", sans-serif;
-  --font-body: "Inter", sans-serif;
-  --font-card: "DM Sans", sans-serif;
+  --font-heading: var(--font-sora);
+  --font-body: var(--font-inter);
+  --font-card: var(--font-dm-sans);
 
   --color-primary: #1b4fd8;
   --color-primary-light: #eef3ff;

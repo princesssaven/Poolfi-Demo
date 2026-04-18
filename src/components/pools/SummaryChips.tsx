@@ -11,7 +11,7 @@ interface SummaryChipsProps {
 
 export default function SummaryChips({ chips }: SummaryChipsProps) {
   return (
-    <div className="flex gap-3.5 mb-6">
+    <div className="mb-6 grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
       {chips.map((chip, i) => (
         <div
           key={i}

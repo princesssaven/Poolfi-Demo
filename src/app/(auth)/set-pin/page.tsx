@@ -72,7 +72,7 @@ export default function SetPinPage() {
     <>
       <AuthHeroPanel />
 
-      <main className="flex flex-1 items-start justify-center overflow-y-auto bg-white px-6 py-16 lg:px-12">
+      <main className="flex flex-1 items-start justify-center overflow-y-auto bg-white px-4 py-10 sm:px-6 sm:py-12 lg:px-12 lg:py-16">
         <div className="w-full max-w-[709px]">
           {/* Progress indicator — Step 3 of 3 */}
           <div className="mb-2.5 flex items-center gap-1.5">
@@ -99,7 +99,7 @@ export default function SetPinPage() {
           {/* PIN Inputs */}
           <div className="mt-6 flex flex-col gap-[13px]">
             <div
-              className="flex gap-[17px]"
+              className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-[17px]"
               onPaste={handlePaste}
               role="group"
               aria-label="Transaction PIN"
@@ -117,7 +117,7 @@ export default function SetPinPage() {
                   onChange={(e) => handleInput(i, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(i, e)}
                   aria-label={`PIN digit ${i + 1}`}
-                  className={`h-[66px] w-[112px] shrink rounded-[10px] border text-center font-card text-2xl font-bold transition-all duration-200 outline-none ${
+                  className={`h-14 w-full rounded-[10px] border text-center font-card text-2xl font-bold transition-all duration-200 outline-none sm:h-[66px] sm:w-[112px] ${
                     digit
                       ? "border-primary bg-primary-light text-primary"
                       : "border-border bg-white text-text-dark"

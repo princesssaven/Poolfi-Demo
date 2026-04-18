@@ -22,8 +22,8 @@ export default function ProgressSection({
   const percentage = Math.min(Math.round((raised / target) * 100), 100);
 
   return (
-    <div className="border border-border rounded-lg p-6">
-      <div className="flex items-center justify-between mb-3">
+    <div className="rounded-lg border border-border p-5 sm:p-6">
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="font-heading text-[22px] font-extrabold tracking-[-0.5px] text-text-dark">
           {formatCurrency(raised)} raised
         </h3>
@@ -50,7 +50,7 @@ export default function ProgressSection({
         />
       </div>
 
-      <div className="flex justify-between text-xs text-text-muted font-card">
+      <div className="flex flex-col gap-1 text-xs font-card text-text-muted sm:flex-row sm:justify-between">
         <span>
           {isCompleted
             ? `${paidCount} people already paid`

@@ -1,6 +1,4 @@
 "use client";
-
-import { useState } from "react";
 import RulesGearIcon from "@/src/assets/icons/rules-gear.svg";
 import CloseIcon from "@/src/assets/icons/close.svg";
 import PlusBlueIcon from "@/src/assets/icons/plus-blue.svg";
@@ -54,7 +52,7 @@ export default function RulesFieldsStep({
   return (
     <div className="rounded-[20px] border border-border bg-white overflow-hidden">
       {/* Header */}
-      <div className="flex items-start gap-3.5 p-7 pb-5">
+      <div className="flex items-start gap-3.5 p-5 pb-5 sm:p-7 sm:pb-5">
         <RulesGearIcon className="w-6 h-6 text-primary shrink-0 mt-0.5" />
         <div>
           <h2 className="font-heading text-[17px] font-bold tracking-[-0.3px] text-text-dark">
@@ -67,9 +65,9 @@ export default function RulesFieldsStep({
       </div>
 
       {/* Form */}
-      <div className="px-7 pb-5 flex flex-col gap-2.5">
+      <div className="flex flex-col gap-2.5 px-5 pb-5 sm:px-7">
         {/* Toggle: Take All at Close */}
-        <div className="flex items-center justify-between border border-border rounded-[10px] p-5">
+        <div className="flex flex-col gap-4 rounded-[10px] border border-border p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[13px] font-semibold text-text-dark font-card">
               Take All at Close
@@ -86,7 +84,7 @@ export default function RulesFieldsStep({
         </div>
 
         {/* Toggle: Milestone Withdrawals */}
-        <div className="flex items-center justify-between border border-border rounded-[10px] p-5">
+        <div className="flex flex-col gap-4 rounded-[10px] border border-border p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[13px] font-semibold text-text-dark font-card">
               Milestone Withdrawals
@@ -111,7 +109,7 @@ export default function RulesFieldsStep({
             {data.milestones.map((m, i) => (
               <div
                 key={i}
-                className="flex items-center bg-bg-page rounded-xl px-4 py-3 gap-2.5"
+                className="flex flex-col gap-2.5 rounded-xl bg-bg-page px-4 py-3 sm:flex-row sm:items-center"
               >
                 <span className="text-sm font-card text-primary font-bold min-w-[40px]">
                   {m.percentage}
@@ -146,7 +144,7 @@ export default function RulesFieldsStep({
         </h3>
 
         {/* Toggle: Auto-close */}
-        <div className="flex items-center justify-between border border-border rounded-[10px] p-5">
+        <div className="flex flex-col gap-4 rounded-[10px] border border-border p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[13px] font-semibold text-text-dark font-card">
               Auto-close on Target
@@ -163,7 +161,7 @@ export default function RulesFieldsStep({
         </div>
 
         {/* Toggle: Anonymous */}
-        <div className="flex items-center justify-between border border-border rounded-[10px] p-5">
+        <div className="flex flex-col gap-4 rounded-[10px] border border-border p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[13px] font-semibold text-text-dark font-card">
               Allow Anonymous Contributions
@@ -180,7 +178,7 @@ export default function RulesFieldsStep({
         </div>
 
         {/* Toggle: Reminders */}
-        <div className="flex items-center justify-between border border-border rounded-[10px] p-5">
+        <div className="flex flex-col gap-4 rounded-[10px] border border-border p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[13px] font-semibold text-text-dark font-card">
               Automatic Reminders
@@ -198,7 +196,7 @@ export default function RulesFieldsStep({
       </div>
 
       {/* Footer */}
-      <div className="flex gap-3 border-t border-border px-7 py-5">
+      <div className="flex flex-col gap-3 border-t border-border px-5 py-5 sm:flex-row sm:px-7">
         <button
           onClick={onBack}
           className="flex-1 border border-border text-text-muted text-sm font-semibold font-card py-3 rounded-full hover:bg-gray-50 transition-colors"

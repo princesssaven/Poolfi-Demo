@@ -21,13 +21,13 @@ export default function CreatePoolModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="620px">
       <ModalHeader title="Create a Pool" onClose={onClose} />
-      <p className="px-8 mt-3 text-[12px] text-text-muted leading-[19px]">
+      <p className="mt-3 px-5 text-[12px] leading-[19px] text-text-muted sm:px-8">
         Choose the type of pool you want to create. You can always change the
         details after
       </p>
 
       {/* Pool type cards */}
-      <div className="flex gap-4 px-8 mt-7">
+      <div className="mt-7 flex flex-col gap-4 px-5 sm:flex-row sm:px-8">
         <button
           onClick={() => setSelected("goal")}
           className={`flex-1 flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all duration-200 ${
@@ -81,7 +81,7 @@ export default function CreatePoolModal({
       </div>
 
       {/* Continue button */}
-      <div className="px-8 pb-8 mt-6">
+      <div className="mt-6 px-5 pb-6 sm:px-8 sm:pb-8">
         <button
           onClick={() => onContinue(selected)}
           className="w-full bg-primary text-white py-3 rounded-full text-[11px] font-bold hover:bg-primary-dark transition-colors"

@@ -57,7 +57,7 @@ export default function PoolDashboardPage({
   return (
     <div>
       {/* Top bar */}
-      <header className="flex items-center justify-between mb-6">
+      <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="font-heading text-lg font-bold tracking-[-0.3px] text-text-dark">
             Good morning,Saven👋
@@ -66,7 +66,7 @@ export default function PoolDashboardPage({
             Wednesday, Feb 18, 2026
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {pool.isCompleted ? (
             <>
               <button
@@ -102,7 +102,7 @@ export default function PoolDashboardPage({
 
       {/* Release Banner (completed pools) */}
       {pool.releaseBanner && (
-        <div className="flex items-center justify-between bg-success rounded-xl p-5 mb-4">
+        <div className="mb-4 flex flex-col gap-4 rounded-xl bg-success p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="font-heading text-lg font-bold text-white">
               {pool.releaseBanner.title}
@@ -111,7 +111,7 @@ export default function PoolDashboardPage({
               {pool.releaseBanner.description}
             </p>
           </div>
-          <button className="bg-white text-success px-5 py-2.5 rounded-full text-[13px] font-bold hover:bg-gray-100 transition-colors shrink-0">
+          <button className="shrink-0 rounded-full bg-white px-5 py-2.5 text-[13px] font-bold text-success transition-colors hover:bg-gray-100">
             Release {pool.releaseAmount}
           </button>
         </div>

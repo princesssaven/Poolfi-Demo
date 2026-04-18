@@ -99,39 +99,41 @@ export default function MembersSection({
   return (
     <div className="border border-border rounded-2xl overflow-hidden">
       {/* Tabs */}
-      <div className="flex border-b border-border">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab;
-          const label = tab === "Members" ? `Members (${totalMembers})` : tab;
-          return (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-5 py-4 text-[13px] font-semibold font-card transition-colors relative ${
-                isActive
-                  ? "text-primary"
-                  : tab === "Danger Zone"
-                  ? "text-text-muted hover:text-danger"
-                  : "text-text-muted hover:text-text-dark"
-              }`}
-              aria-selected={isActive}
-              role="tab"
-            >
-              {label}
-              {isActive && (
-                <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary rounded-t-full" />
-              )}
-            </button>
-          );
-        })}
+      <div className="overflow-x-auto border-b border-border">
+        <div className="flex min-w-max">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab;
+            const label = tab === "Members" ? `Members (${totalMembers})` : tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`relative px-5 py-4 text-[13px] font-semibold font-card transition-colors ${
+                  isActive
+                    ? "text-primary"
+                    : tab === "Danger Zone"
+                      ? "text-text-muted hover:text-danger"
+                      : "text-text-muted hover:text-text-dark"
+                }`}
+                aria-selected={isActive}
+                role="tab"
+              >
+                {label}
+                {isActive && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-primary" />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Members Tab */}
       {activeTab === "Members" && (
         <div className="p-5">
           {/* Toolbar */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
               {/* Search */}
               <div className="flex items-center gap-2 border border-border rounded-[10px] px-3 py-2 bg-white">
                 <span className="text-sm text-text-muted" aria-hidden="true">
@@ -142,7 +144,7 @@ export default function MembersSection({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search Members"
-                  className="text-sm font-card text-text-dark placeholder:text-text-muted focus:outline-none w-[130px]"
+                  className="w-full text-sm font-card text-text-dark placeholder:text-text-muted focus:outline-none sm:w-[130px]"
                   aria-label="Search members"
                 />
               </div>
@@ -158,13 +160,13 @@ export default function MembersSection({
             </div>
 
             {/* Remind All Unpaid */}
-            <button className="flex items-center gap-1.5 border border-border rounded-full px-4 py-2 text-xs font-bold text-text-dark hover:bg-gray-50 transition-colors">
+            <button className="flex w-full items-center justify-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-bold text-text-dark transition-colors hover:bg-gray-50 sm:w-fit">
               🔔 Remind All Unpaid
             </button>
           </div>
 
           {/* Filter pills */}
-          <div className="flex gap-2 mb-4">
+          <div className="mb-4 flex flex-wrap gap-2">
             {filters.map((f) => (
               <button
                 key={f.key}
@@ -186,7 +188,7 @@ export default function MembersSection({
             {filteredMembers.map((member, i) => (
               <div
                 key={i}
-                className="flex items-center py-3.5 border-b border-border last:border-b-0 gap-3"
+                className="flex flex-col gap-3 border-b border-border py-3.5 last:border-b-0 sm:flex-row sm:items-center"
               >
                 {/* Avatar */}
                 <div
@@ -206,7 +208,7 @@ export default function MembersSection({
                 </div>
 
                 {/* Status + receipt */}
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start">
                   <span
                     className={`text-[11px] font-bold ${
                       member.status === "paid" ? "text-success" : "text-warning"

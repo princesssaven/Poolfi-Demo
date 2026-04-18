@@ -33,7 +33,7 @@ export default function PoolBasicsStep({
   return (
     <div className="rounded-[20px] border border-border bg-white overflow-hidden">
       {/* Header */}
-      <div className="flex items-start gap-3.5 p-7 pb-5">
+      <div className="flex items-start gap-3.5 p-5 pb-5 sm:p-7 sm:pb-5">
         <PoolBasicsIcon className="w-6 h-6 text-primary shrink-0 mt-0.5" />
         <div>
           <h2 className="font-heading text-[17px] font-bold tracking-[-0.3px] text-text-dark">
@@ -47,7 +47,7 @@ export default function PoolBasicsStep({
       </div>
 
       {/* Form */}
-      <div className="px-7 pb-5 flex flex-col gap-5">
+      <div className="flex flex-col gap-5 px-5 pb-5 sm:px-7">
         {/* Pool Name */}
         <div className="flex flex-col gap-[7px]">
           <label className="text-[13px] font-semibold text-text-dark font-card">
@@ -80,7 +80,7 @@ export default function PoolBasicsStep({
         </div>
 
         {/* Target + Per Person */}
-        <div className="flex gap-3.5">
+        <div className="flex flex-col gap-3.5 sm:flex-row">
           <div className="flex-1 flex flex-col gap-[7px]">
             <label className="text-[13px] font-semibold text-text-dark font-card">
               Target Amount (₦)
@@ -122,7 +122,7 @@ export default function PoolBasicsStep({
         </div>
 
         {/* Start Date + Deadline */}
-        <div className="flex gap-3.5">
+        <div className="flex flex-col gap-3.5 sm:flex-row">
           <div className="flex-1 flex flex-col gap-[7px]">
             <label className="text-[13px] font-semibold text-text-dark font-card">
               Start Date
@@ -172,7 +172,7 @@ export default function PoolBasicsStep({
       </div>
 
       {/* Footer */}
-      <div className="flex gap-3 border-t border-border px-7 py-5">
+      <div className="flex flex-col gap-3 border-t border-border px-5 py-5 sm:flex-row sm:px-7">
         <button
           onClick={onCancel}
           className="flex-1 border border-border text-text-muted text-sm font-semibold font-card py-3 rounded-full hover:bg-gray-50 transition-colors"

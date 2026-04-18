@@ -5,7 +5,7 @@ import { myPoolsData as data } from "@/src/data/mockData";
 
 export default function MyPoolsPage() {
   return (
-    <div className="max-w-[1120px]">
+    <div className="w-full max-w-[1120px]">
       <SummaryChips chips={data.summary} />
 
       {/* Pools I Manage */}

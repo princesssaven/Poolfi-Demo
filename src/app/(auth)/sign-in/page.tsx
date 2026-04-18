@@ -24,7 +24,7 @@ export default function SignInPage() {
     <>
       <AuthHeroPanel />
 
-      <main className="flex flex-1 items-start justify-center overflow-y-auto bg-white px-6 py-16 lg:px-12">
+      <main className="flex flex-1 items-start justify-center overflow-y-auto bg-white px-4 py-10 sm:px-6 sm:py-12 lg:px-12 lg:py-16">
         <div className="w-full max-w-[709px]">
           {/* Header */}
           <h1 className="font-card text-[28px] font-extrabold tracking-[-0.5px] text-text-dark">

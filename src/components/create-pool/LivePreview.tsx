@@ -20,7 +20,7 @@ export default function LivePreview({
   requiredFields = ["👤 Full Name", "🎓 Matric No."],
 }: LivePreviewProps) {
   return (
-    <div className="w-[340px] shrink-0 flex flex-col gap-3">
+    <div className="flex w-full shrink-0 flex-col gap-3 lg:w-[340px]">
       {/* Header */}
       <div className="flex items-center gap-1.5">
         <EyeIcon className="w-4 h-4 text-text-dark" />

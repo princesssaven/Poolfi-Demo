@@ -24,7 +24,7 @@ export default function PoolHeader({
   stats,
 }: PoolHeaderProps) {
   return (
-    <div className="bg-primary rounded-2xl p-6 relative overflow-hidden">
+    <div className="relative overflow-hidden rounded-2xl bg-primary p-5 sm:p-6">
       <div className="absolute top-0 right-0 w-[200px] h-[140px] rounded-full bg-white/[0.04]" />
 
       <p className="text-[10px] font-bold tracking-[1px] uppercase text-white/60 mb-1">
@@ -33,7 +33,7 @@ export default function PoolHeader({
       <h2 className="font-heading text-lg font-bold tracking-[-0.3px] text-white leading-snug mb-1.5">
         {title}
       </h2>
-      <div className="flex items-center gap-2 text-white/55 text-[11px] mb-5">
+      <div className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-white/55">
         <span>📅 {closesDate}</span>
         <span>·</span>
         <span>💰 {perPerson}</span>
@@ -41,7 +41,7 @@ export default function PoolHeader({
         <span>{category}</span>
       </div>
 
-      <div className="flex gap-[23px]">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat, i) => (
           <div
             key={i}

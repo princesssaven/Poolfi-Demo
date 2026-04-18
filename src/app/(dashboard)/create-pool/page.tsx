@@ -79,7 +79,7 @@ export default function CreatePoolPage() {
   return (
     <div>
       {/* Top bar */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={() =>
@@ -110,9 +110,9 @@ export default function CreatePoolPage() {
       </div>
 
       {/* Content area */}
-      <div className="flex gap-7">
+      <div className="flex flex-col gap-7 xl:flex-row">
         {/* Left: Form */}
-        <div className="flex-1 min-w-0 max-w-[740px]">
+        <div className="min-w-0 flex-1 xl:max-w-[740px]">
           {currentStep === 1 && (
             <PoolBasicsStep
               data={basicsData}

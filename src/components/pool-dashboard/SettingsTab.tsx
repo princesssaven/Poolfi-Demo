@@ -81,13 +81,13 @@ export default function SettingsTab({
   ];
 
   return (
-    <div className="p-5 flex gap-4">
+    <div className="flex flex-col gap-4 p-5 xl:flex-row">
       {/* Quick Actions */}
-      <div className="w-[260px] shrink-0 border border-border rounded-2xl p-5">
+      <div className="w-full shrink-0 rounded-2xl border border-border p-5 xl:w-[260px]">
         <h3 className="font-heading text-[15px] font-bold text-text-dark mb-4">
           ⚡ Quick Actions
         </h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {quickActions.map((action, i) => (
             <button
               key={i}
@@ -110,7 +110,7 @@ export default function SettingsTab({
       </div>
 
       {/* Pool Rules */}
-      <div className="flex-1 border border-border rounded-2xl p-5">
+      <div className="flex-1 rounded-2xl border border-border p-5">
         <h3 className="font-heading text-[15px] font-bold text-text-dark mb-4">
           ⚙️ Pool Rules
         </h3>
@@ -118,7 +118,7 @@ export default function SettingsTab({
           {poolRules.map((rule, i) => (
             <div
               key={i}
-              className={`flex items-center justify-between py-4 ${
+              className={`flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between ${
                 i < poolRules.length - 1 ? "border-b border-border" : ""
               }`}
             >

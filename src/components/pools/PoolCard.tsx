@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { PoolCardData } from "@/src/data/mockData";
 
 function formatCurrency(amount: number): string {
@@ -107,7 +108,7 @@ export default function PoolCard({ pool }: PoolCardProps) {
         </div>
 
         {/* Progress meta */}
-        <div className="flex justify-between text-[11px] text-text-muted font-card mb-4">
+        <div className="mb-4 flex flex-col gap-1 text-[11px] font-card text-text-muted sm:flex-row sm:justify-between">
           <span>{formatCurrency(pool.raised)} raised</span>
           <span>
             {isCompleted
@@ -137,7 +138,7 @@ export default function PoolCard({ pool }: PoolCardProps) {
 
       {/* Footer */}
       <div
-        className={`flex items-center justify-between px-5 py-3.5 border-t border-border ${
+        className={`flex flex-col gap-3 px-5 py-3.5 border-t border-border sm:flex-row sm:items-center sm:justify-between ${
           isCompleted
             ? "bg-success-bg"
             : pool.footer.left.includes("Approval")
@@ -152,8 +153,9 @@ export default function PoolCard({ pool }: PoolCardProps) {
         >
           {pool.footer.left}
         </span>
-        <button
-          className={`text-xs font-bold font-card ${
+        <Link
+          href={`/pool/${pool.id}`}
+          className={`inline-flex w-fit items-center text-xs font-bold font-card ${
             pool.role === "impact"
               ? "text-purple"
               : pool.footer.rightIsLink
@@ -162,7 +164,7 @@ export default function PoolCard({ pool }: PoolCardProps) {
           } hover:underline`}
         >
           {pool.footer.right}
-        </button>
+        </Link>
       </div>
     </div>
   );

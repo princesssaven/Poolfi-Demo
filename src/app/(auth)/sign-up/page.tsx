@@ -34,7 +34,7 @@ export default function SignUpPage() {
     <>
       <AuthHeroPanel />
 
-      <main className="flex flex-1 items-start justify-center overflow-y-auto bg-white px-6 py-10 lg:px-12">
+      <main className="flex flex-1 items-start justify-center overflow-y-auto bg-white px-4 py-8 sm:px-6 sm:py-10 lg:px-12">
         <div className="w-full max-w-[709px]">
           {/* Progress indicator */}
           <div className="mb-5 flex items-center gap-1.5">
@@ -62,7 +62,7 @@ export default function SignUpPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-[22px]">
             {/* First Name + Last Name */}
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <div className="flex flex-1 flex-col gap-[7px]">
                 <label
                   htmlFor="firstName"

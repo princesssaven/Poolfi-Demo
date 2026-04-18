@@ -56,7 +56,7 @@ export default function AddMembersStep({
   return (
     <div className="rounded-[20px] border border-border bg-white overflow-hidden">
       {/* Header */}
-      <div className="flex items-start gap-3.5 p-7 pb-5">
+      <div className="flex items-start gap-3.5 p-5 pb-5 sm:p-7 sm:pb-5">
         <RulesGearIcon className="w-6 h-6 text-primary shrink-0 mt-0.5" />
         <div>
           <h2 className="font-heading text-[17px] font-bold tracking-[-0.3px] text-text-dark">
@@ -70,7 +70,7 @@ export default function AddMembersStep({
       </div>
 
       {/* Form */}
-      <div className="px-7 pb-5 flex flex-col gap-5">
+      <div className="flex flex-col gap-5 px-5 pb-5 sm:px-7">
         {/* Required Identity Fields */}
         <div className="flex flex-col gap-2.5">
           <h3 className="text-base font-bold text-text-dark font-card">
@@ -112,7 +112,7 @@ export default function AddMembersStep({
               <label className="text-[13px] font-semibold text-text-dark font-card">
                 Custom field label
               </label>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <input
                   type="text"
                   value={customLabel}
@@ -144,7 +144,7 @@ export default function AddMembersStep({
           </h3>
 
           {/* CSV Upload area */}
-          <div className="border border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-gray-300 p-6 sm:p-8">
             <FileAttachmentIcon className="w-10 h-10 text-primary" />
             <p className="text-base font-bold text-text-dark font-card">
               Required Identity Fields
@@ -158,7 +158,7 @@ export default function AddMembersStep({
           <p className="text-[13px] font-semibold text-text-dark font-card mt-2">
             Or add Manually
           </p>
-          <div className="flex gap-2.5">
+          <div className="flex flex-col gap-2.5 sm:flex-row">
             <input
               type="text"
               value={newMember.name}
@@ -178,7 +178,7 @@ export default function AddMembersStep({
               className="flex-1 border border-border rounded-[10px] px-4 py-3 text-sm font-card text-text-dark placeholder:text-gray-300 focus:outline-none focus:border-primary"
             />
           </div>
-          <div className="flex gap-2.5">
+          <div className="flex flex-col gap-2.5 sm:flex-row">
             {data.customFields.map((field) => (
               <input
                 key={field}
@@ -193,7 +193,7 @@ export default function AddMembersStep({
             ))}
             <button
               onClick={addMember}
-              className="flex items-center gap-2 border border-border rounded-[10px] px-6 py-3 text-sm font-card text-text-dark hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-center gap-2 rounded-[10px] border border-border px-6 py-3 text-sm font-card text-text-dark transition-colors hover:bg-gray-50"
             >
               <PlusOutlineBlueIcon className="w-3.5 h-3.5 text-primary" />
               Add
@@ -221,7 +221,7 @@ export default function AddMembersStep({
       </div>
 
       {/* Footer */}
-      <div className="flex gap-3 border-t border-border px-7 py-5">
+      <div className="flex flex-col gap-3 border-t border-border px-5 py-5 sm:flex-row sm:px-7">
         <button
           onClick={onBack}
           className="flex-1 border border-border text-text-muted text-sm font-semibold font-card py-3 rounded-full hover:bg-gray-50 transition-colors"

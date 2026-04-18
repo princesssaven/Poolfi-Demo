@@ -18,9 +18,9 @@ export default function AddMoneyModal({ isOpen, onClose }: AddMoneyModalProps) {
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="640px">
       <ModalHeader title="Add Money" onClose={onClose} />
 
-      <div className="px-8 pb-8 mt-5 flex flex-col gap-5">
+      <div className="mt-5 flex flex-col gap-5 px-5 pb-6 sm:px-8 sm:pb-8">
         {/* Tabs */}
-        <div className="flex items-center rounded-xl shadow-[0_1px_4.6px_rgba(0,0,0,0.25)] px-2 py-1.5 gap-2">
+        <div className="flex flex-col gap-2 rounded-xl px-2 py-1.5 shadow-[0_1px_4.6px_rgba(0,0,0,0.25)] sm:flex-row sm:items-center">
           {tabs.map((tab) => (
             <button
               key={tab}

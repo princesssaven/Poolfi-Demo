@@ -14,12 +14,15 @@ export default function TopHeader({ hideDefault }: TopHeaderProps) {
   const isMyPools = pathname === "/my-pools";
   const isCreatePool = pathname === "/create-pool";
   const isPoolDashboard = pathname.startsWith("/pool/");
+  const isImpactContribution = pathname.startsWith("/impact-contribution");
+
+  void hideDefault;
 
   // Hide default header on pages that have their own headers
-  if (isCreatePool || isPoolDashboard) return null;
+  if (isCreatePool || isPoolDashboard || isImpactContribution) return null;
 
   return (
-    <header className="flex items-center justify-between mb-6">
+    <header className="mb-6 hidden items-start justify-between gap-4 lg:flex">
       <div>
         <h1 className="font-heading text-lg font-bold tracking-tight text-text-dark">
           Good morning, Saven👋
@@ -29,7 +32,7 @@ export default function TopHeader({ hideDefault }: TopHeaderProps) {
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <button
           className="w-10 h-10 rounded-full border border-border flex items-center justify-center hover:bg-gray-50 transition-colors"
           aria-label="Notifications"
