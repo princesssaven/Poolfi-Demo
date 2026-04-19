@@ -21,6 +21,18 @@ export function isEmailConfigured() {
 export async function sendEmail(input: SendEmailInput) {
   const { apiKey, from, replyTo } = getResendConfig();
 
+  // MOCK EMAILS FOR LOCAL DEVELOPMENT
+  // Since you don't have a verified domain, we just log the email to the terminal.
+  if (process.env.NODE_ENV !== "production" || from?.includes("resend.dev")) {
+    console.log("\n=======================================================");
+    console.log("📧 MOCK EMAIL INTERCEPTED (Development Mode)");
+    console.log(`To:      ${input.to}`);
+    console.log(`Subject: ${input.subject}`);
+    console.log(`Message: ${input.text}`);
+    console.log("=======================================================\n");
+    return { success: true, mocked: true };
+  }
+
   if (!apiKey || !from) {
     throw new Error("Email delivery is not configured. Set RESEND_API_KEY and EMAIL_FROM.");
   }
