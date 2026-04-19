@@ -3,7 +3,10 @@
 import { useState } from "react";
 
 interface DangerZoneTabProps {
+  actionPending?: "cancel" | "close" | "pause" | "resume" | null;
+  onAction?: (action: "cancel" | "close" | "pause" | "resume") => void | Promise<void>;
   poolName?: string;
+  paused?: boolean;
   raised?: number;
   target?: number;
   memberCount?: number;
@@ -11,7 +14,10 @@ interface DangerZoneTabProps {
 }
 
 export default function DangerZoneTab({
+  actionPending = null,
+  onAction,
   poolName = "300L Class Dues",
+  paused = false,
   raised = 312000,
   target = 400000,
   memberCount = 400,
@@ -19,7 +25,6 @@ export default function DangerZoneTab({
 }: DangerZoneTabProps) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [pauseActive, setPauseActive] = useState(false);
 
   void poolName;
   void raised;
@@ -48,11 +53,18 @@ export default function DangerZoneTab({
         </p>
 
         <button
-          onClick={() => setShowCloseConfirm(!showCloseConfirm)}
+          onClick={() => {
+            if (showCloseConfirm) {
+              void onAction?.("close");
+            } else {
+              setShowCloseConfirm(true);
+            }
+          }}
           className="w-full mt-1 py-3 border border-danger/30 rounded-lg text-[13px] font-bold text-danger bg-white/60 hover:bg-white transition-colors text-center"
           aria-label="Close pool and withdraw funds"
+          disabled={Boolean(actionPending) || isCompleted}
         >
-          ✅ Close Pool &amp; Withdraw
+          {actionPending === "close" ? "Closing..." : "✅ Close Pool & Withdraw"}
         </button>
 
         {showCloseConfirm && (
@@ -62,11 +74,20 @@ export default function DangerZoneTab({
         )}
 
         <button
-          onClick={() => setShowCancelConfirm(!showCancelConfirm)}
+          onClick={() => {
+            if (showCancelConfirm) {
+              void onAction?.("cancel");
+            } else {
+              setShowCancelConfirm(true);
+            }
+          }}
           className="w-full py-3 border border-danger/30 rounded-lg text-[13px] font-bold text-danger bg-white/60 hover:bg-white transition-colors text-center"
           aria-label="Cancel pool and refund all contributions"
+          disabled={Boolean(actionPending) || isCompleted}
         >
-          ✕ Cancel Pool &amp; Refund All
+          {actionPending === "cancel"
+            ? "Cancelling..."
+            : "✕ Cancel Pool & Refund All"}
         </button>
 
         {showCancelConfirm && (
@@ -94,11 +115,18 @@ export default function DangerZoneTab({
         </p>
 
         <button
-          onClick={() => setPauseActive(!pauseActive)}
+          onClick={() => void onAction?.(paused ? "resume" : "pause")}
           className="w-full mt-1 py-3 border border-warning/50 rounded-lg text-[13px] font-bold text-warning bg-white/40 hover:bg-white/60 transition-colors text-center"
           aria-label="Pause contributions to this pool"
+          disabled={Boolean(actionPending) || isCompleted}
         >
-          {pauseActive ? "▶ Resume contributions" : "Pause contributions"}
+          {actionPending === "pause" || actionPending === "resume"
+            ? paused
+              ? "Resuming..."
+              : "Pausing..."
+            : paused
+              ? "▶ Resume contributions"
+              : "Pause contributions"}
         </button>
       </div>
     </div>

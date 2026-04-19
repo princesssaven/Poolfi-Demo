@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a PoolFi MVP built with [Next.js](https://nextjs.org), Auth.js, and a Supabase-ready PostgreSQL database layer via Drizzle.
 
-## Getting Started
+## Local Setup
 
-First, run the development server:
+1. Create `.env.local` from `.env.example`.
+2. Add a Supabase pooled Postgres connection string to `DATABASE_URL`.
+3. Add your auth values:
+   - `AUTH_SECRET`
+   - `AUTH_GOOGLE_ID`
+   - `AUTH_GOOGLE_SECRET`
+   - `RESEND_API_KEY`
+   - `EMAIL_FROM`
+   - `EMAIL_REPLY_TO` (optional)
+4. Push the schema to your database:
+
+```bash
+npm run db:push
+```
+
+5. Start the app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Supabase Notes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Use the `Transaction pooler` connection string from Supabase for `DATABASE_URL`.
+- Keep the `?sslmode=require` query string in that URL.
+- After schema changes, either run `npm run db:push` for a fast MVP sync or `npm run db:generate` to create a SQL migration.
 
-## Learn More
+## Google OAuth Redirects
 
-To learn more about Next.js, take a look at the following resources:
+Add these in Google Cloud Console:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Local: `http://localhost:3000/api/auth/callback/google`
+- Production: `https://your-domain.com/api/auth/callback/google`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Database Scripts
 
-## Deploy on Vercel
+- `npm run db:generate` generates Drizzle SQL migrations from the schema.
+- `npm run db:migrate` applies generated migrations.
+- `npm run db:push` pushes the current schema directly to the database.
+- `npm run db:studio` opens Drizzle Studio.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Current MVP Auth Flow
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Email sign-up persists users in Postgres after verification and PIN setup.
+- Verification codes and password reset links are sent through Resend.
+- Email sign-in checks the same users table with bcrypt-hashed credentials.
+- Google sign-in upserts users into the same table before opening a session.
+- Account settings persist to the users table.
+- Goal pool creation, pool settings, reminders, notifications, and pool status changes now use database-backed routes.

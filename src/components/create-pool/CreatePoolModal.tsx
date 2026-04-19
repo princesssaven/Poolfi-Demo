@@ -19,60 +19,66 @@ export default function CreatePoolModal({
   const [selected, setSelected] = useState<"goal" | "impact">("goal");
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth="620px">
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="648px">
       <ModalHeader title="Create a Pool" onClose={onClose} />
-      <p className="mt-3 px-5 text-[12px] leading-[19px] text-text-muted sm:px-8">
+      <p className="mt-3 max-w-[370px] px-5 text-[12px] leading-[19px] text-text-muted sm:px-8">
         Choose the type of pool you want to create. You can always change the
         details after
       </p>
 
-      {/* Pool type cards */}
-      <div className="mt-7 flex flex-col gap-4 px-5 sm:flex-row sm:px-8">
+      <div className="mt-8 flex flex-col gap-4 px-5 sm:flex-row sm:px-8">
         <button
+          type="button"
           onClick={() => setSelected("goal")}
-          className={`flex-1 flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all duration-200 ${
+          className={`flex min-h-[188px] flex-1 flex-col items-center justify-center gap-5 rounded-[16px] border px-5 py-7 text-center transition-all duration-200 ${
             selected === "goal"
-              ? "border-primary bg-primary-light/50"
-              : "border-border bg-white hover:border-gray-300"
+              ? "border-primary bg-[#eef3ff] shadow-[0_10px_22px_rgba(51,94,255,0.18)]"
+              : "border-[#7a8699] bg-white hover:border-text-muted"
           }`}
         >
           <div
-            className={`w-[52px] h-[52px] rounded-xl flex items-center justify-center ${
-              selected === "goal" ? "bg-white shadow-sm" : "bg-gray-100"
+            className={`flex h-[58px] w-[58px] items-center justify-center rounded-[16px] border ${
+              selected === "goal"
+                ? "border-white bg-white shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+                : "border-border bg-white"
             }`}
           >
-            <GoalPoolIcon className="w-[30px] h-[30px] text-text-dark" />
+            <GoalPoolIcon className="h-[30px] w-[30px] text-text-muted" />
           </div>
-          <div className="text-center">
-            <p className="font-heading text-[11px] font-bold text-text-dark mb-1.5">
+          <div>
+            <p className="mb-2 font-heading text-[13px] font-bold text-text-dark">
               Goal Pool
             </p>
-            <p className="text-[9px] text-text-muted leading-[14px]">
-              Private. Invite-only. For class dues, events, group contributions.
+            <p className="mx-auto max-w-[190px] text-[10px] leading-[17px] text-text-muted">
+              Private. Invite-only. For class dues, events, group
+              contributions.
             </p>
           </div>
         </button>
 
         <button
+          type="button"
           onClick={() => setSelected("impact")}
-          className={`flex-1 flex flex-col items-center gap-5 p-6 rounded-xl border-2 transition-all duration-200 ${
+          className={`flex min-h-[188px] flex-1 flex-col items-center justify-center gap-5 rounded-[16px] border px-5 py-7 text-center transition-all duration-200 ${
             selected === "impact"
-              ? "border-primary bg-primary-light/50"
-              : "border-border bg-white hover:border-gray-300"
+              ? "border-primary bg-[#eef3ff] shadow-[0_10px_22px_rgba(51,94,255,0.18)]"
+              : "border-[#7a8699] bg-white hover:border-text-muted"
           }`}
         >
           <div
-            className={`w-[52px] h-[52px] rounded-xl flex items-center justify-center ${
-              selected === "impact" ? "bg-white shadow-sm" : "bg-gray-100"
+            className={`flex h-[58px] w-[58px] items-center justify-center rounded-[16px] border ${
+              selected === "impact"
+                ? "border-white bg-white shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+                : "border-border bg-white"
             }`}
           >
-            <ImpactPoolIcon className="w-6 h-6 text-text-dark" />
+            <ImpactPoolIcon className="h-6 w-6 text-text-muted" />
           </div>
-          <div className="text-center">
-            <p className="font-heading text-[11px] font-bold text-text-dark mb-1.5">
+          <div>
+            <p className="mb-2 font-heading text-[13px] font-bold text-text-dark">
               Impact Pool
             </p>
-            <p className="text-[9px] text-text-muted leading-[14px]">
+            <p className="mx-auto max-w-[190px] text-[10px] leading-[17px] text-text-muted">
               Public. Community-verified. For causes, projects, and shared
               goals.
             </p>
@@ -80,11 +86,11 @@ export default function CreatePoolModal({
         </button>
       </div>
 
-      {/* Continue button */}
-      <div className="mt-6 px-5 pb-6 sm:px-8 sm:pb-8">
+      <div className="mt-5 flex justify-center px-5 pb-6 sm:px-8 sm:pb-8">
         <button
+          type="button"
           onClick={() => onContinue(selected)}
-          className="w-full bg-primary text-white py-3 rounded-full text-[11px] font-bold hover:bg-primary-dark transition-colors"
+          className="w-full max-w-[260px] rounded-[10px] bg-primary px-6 py-3 text-[12px] font-bold text-white shadow-[0_10px_24px_rgba(51,94,255,0.24)] transition-colors hover:bg-primary-dark"
         >
           Continue to Setup→
         </button>

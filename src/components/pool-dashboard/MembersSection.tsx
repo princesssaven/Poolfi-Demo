@@ -14,66 +14,61 @@ interface Member {
 }
 
 interface MembersSectionProps {
+  activities?: PoolActivityItem[];
+  actionPending?: "cancel" | "close" | "pause" | "resume" | null;
+  autoReminders?: boolean;
+  deadlineValue?: string;
+  isSavingSettings?: boolean;
+  isSendingReminders?: boolean;
   totalMembers: number;
   paidCount: number;
   pendingCount: number;
   members: Member[];
+  onPoolAction?: (action: "cancel" | "close" | "pause" | "resume") => void | Promise<void>;
+  onSaveSettings?: (input: {
+    autoReminders: boolean;
+    deadline: string;
+    perPersonAmount: string;
+  }) => void | Promise<void>;
+  onSendReminders?: () => void | Promise<void>;
   poolName?: string;
+  poolLink?: string;
   perPerson?: string;
+  perPersonAmountValue?: string;
+  paused?: boolean;
   closesDate?: string;
   category?: string;
   raised?: number;
   target?: number;
   isCompleted?: boolean;
+  takeAllAtClose?: boolean;
 }
 
 const tabs = ["Members", "Activity", "Settings", "Danger Zone"] as const;
 
-// Activity feed matching Figma design exactly
-const mockActivities: PoolActivityItem[] = [
-  {
-    dotColor: "#12b76a",
-    mainText: "Adaeze Okonkwo paid ₦2,000 ✓",
-    isBold: true,
-    timeText: "Today, 2:14 PM · Tx: 0xf3a4...d91b",
-  },
-  {
-    dotColor: "#fcd34d",
-    mainText: "Emeka Nwosu joined the pool (Not yet paid)",
-    isBold: true,
-    timeText: "Today, 1:47 PM",
-  },
-  {
-    dotColor: "#1b4fd8",
-    mainText: "47 reminder messages sent to unpaid members",
-    isBold: false,
-    timeText: "Yesterday, 9:00 AM",
-  },
-  {
-    dotColor: "#12b76a",
-    mainText: "Ifeanyi Obi paid ₦2,000 ✓",
-    isBold: true,
-    timeText: "Today, 2:14 PM · Tx: 0xf3a4...d91b",
-  },
-  {
-    dotColor: "#1b4fd8",
-    mainText: "Pool created — 400 member slots pre-loaded",
-    isBold: false,
-    timeText: "5 Jul 2025, 10:00 AM",
-  },
-];
-
 export default function MembersSection({
+  activities = [],
+  actionPending = null,
+  autoReminders = true,
+  deadlineValue = "",
+  isSavingSettings = false,
+  isSendingReminders = false,
   totalMembers,
   paidCount,
   pendingCount,
   members,
+  onPoolAction,
+  onSaveSettings,
+  onSendReminders,
   poolName = "300L Class Dues",
-  perPerson = "₦1,000",
+  poolLink,
+  perPersonAmountValue = "1000",
+  paused = false,
   closesDate = "Feb 28, 2026",
   raised = 312000,
   target = 400000,
   isCompleted = false,
+  takeAllAtClose = false,
 }: MembersSectionProps) {
   const [activeTab, setActiveTab] = useState<string>("Members");
   const [activeFilter, setActiveFilter] = useState<string>("all");
@@ -238,22 +233,32 @@ export default function MembersSection({
 
       {/* Activity Tab */}
       {activeTab === "Activity" && (
-        <ActivityTab activities={mockActivities} />
+        <ActivityTab activities={activities} />
       )}
 
       {/* Settings Tab */}
       {activeTab === "Settings" && (
         <SettingsTab
-          perPerson={perPerson}
-          closesDate={closesDate}
-          autoReminders={true}
+          autoReminders={autoReminders}
+          closesDate={deadlineValue || closesDate}
+          isSaving={isSavingSettings}
+          isSendingReminders={isSendingReminders}
+          onSave={onSaveSettings}
+          onSendReminders={onSendReminders}
+          paused={paused}
+          perPersonAmount={perPersonAmountValue}
+          poolLink={poolLink}
+          takeAllAtClose={takeAllAtClose}
         />
       )}
 
       {/* Danger Zone Tab */}
       {activeTab === "Danger Zone" && (
         <DangerZoneTab
+          actionPending={actionPending}
+          onAction={onPoolAction}
           poolName={poolName}
+          paused={paused}
           raised={raised}
           target={target}
           memberCount={totalMembers}

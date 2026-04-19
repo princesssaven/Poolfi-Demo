@@ -8,6 +8,9 @@ interface ModalProps {
   onClose: () => void;
   children: React.ReactNode;
   maxWidth?: string;
+  closeOnOverlay?: boolean;
+  centerOnMobile?: boolean;
+  panelClassName?: string;
 }
 
 export default function Modal({
@@ -15,6 +18,9 @@ export default function Modal({
   onClose,
   children,
   maxWidth = "640px",
+  closeOnOverlay = true,
+  centerOnMobile = false,
+  panelClassName = "",
 }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -34,13 +40,19 @@ export default function Modal({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-[2px] transition-opacity sm:items-center"
+      className={`fixed inset-0 z-50 flex justify-center bg-[#0f172a]/45 backdrop-blur-[3px] transition-opacity ${
+        centerOnMobile ? "items-center p-3 sm:p-4" : "items-end sm:items-center"
+      }`}
       onClick={(e) => {
-        if (e.target === overlayRef.current) onClose();
+        if (closeOnOverlay && e.target === overlayRef.current) onClose();
       }}
     >
       <div
-        className="mx-2 max-h-[min(92vh,calc(100vh-1rem))] w-full overflow-y-auto rounded-t-2xl bg-white shadow-xl animate-in fade-in zoom-in-95 duration-200 sm:mx-4 sm:rounded-2xl"
+        className={`animate-in fade-in zoom-in-95 max-h-[min(92vh,calc(100vh-1rem))] w-full overflow-y-auto border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.2)] duration-200 ${
+          centerOnMobile
+            ? "rounded-[28px]"
+            : "mx-2 rounded-t-2xl sm:mx-4 sm:rounded-2xl"
+        } ${panelClassName}`}
         style={{ maxWidth }}
         role="dialog"
         aria-modal="true"
@@ -65,7 +77,7 @@ export function ModalHeader({
       </h2>
       <button
         onClick={onClose}
-        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+        className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-border bg-white transition-colors hover:bg-gray-50"
         aria-label="Close"
       >
         <CloseIcon className="w-3.5 h-3.5 text-text-dark" />

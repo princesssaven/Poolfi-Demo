@@ -1,16 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import QuickExportIcon from "@/src/assets/icons/quick-export.svg";
 import QuickCalendarIcon from "@/src/assets/icons/quick-calendar.svg";
 import QuickRemindersIcon from "@/src/assets/icons/quick-reminders.svg";
 import QuickShareIcon from "@/src/assets/icons/quick-share.svg";
-
-interface PoolRule {
-  label: string;
-  value: string;
-  action: string;
-  actionColor?: string;
-}
 
 interface QuickAction {
   Icon: React.FC<React.SVGProps<SVGElement>>;
@@ -20,16 +14,65 @@ interface QuickAction {
 }
 
 interface SettingsTabProps {
-  perPerson?: string;
-  closesDate?: string;
   autoReminders?: boolean;
+  closesDate?: string;
+  isSaving?: boolean;
+  isSendingReminders?: boolean;
+  onSave?: (input: {
+    autoReminders: boolean;
+    deadline: string;
+    perPersonAmount: string;
+  }) => void | Promise<void>;
+  onSendReminders?: () => void | Promise<void>;
+  paused?: boolean;
+  perPersonAmount?: string;
+  poolLink?: string;
+  takeAllAtClose?: boolean;
 }
 
 export default function SettingsTab({
-  perPerson = "₦1,000",
-  closesDate = "Feb 28, 2026",
   autoReminders = true,
+  closesDate = "Feb 28, 2026",
+  isSaving = false,
+  isSendingReminders = false,
+  onSave,
+  onSendReminders,
+  paused = false,
+  perPersonAmount = "1000",
+  poolLink,
+  takeAllAtClose = false,
 }: SettingsTabProps) {
+  const [deadline, setDeadline] = useState(closesDate);
+  const [amountPerPerson, setAmountPerPerson] = useState(perPersonAmount);
+  const [remindersEnabled, setRemindersEnabled] = useState(autoReminders);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    setDeadline(closesDate);
+  }, [closesDate]);
+
+  useEffect(() => {
+    setAmountPerPerson(perPersonAmount);
+  }, [perPersonAmount]);
+
+  useEffect(() => {
+    setRemindersEnabled(autoReminders);
+  }, [autoReminders]);
+
+  const handleCopyLink = async () => {
+    if (!poolLink) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(`https://${poolLink}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   const quickActions: QuickAction[] = [
     {
       Icon: QuickExportIcon,
@@ -40,43 +83,18 @@ export default function SettingsTab({
       Icon: QuickRemindersIcon,
       title: "Send Reminders",
       description: "Nudge all unpaid members",
+      onClick: onSendReminders,
     },
     {
       Icon: QuickCalendarIcon,
       title: "Extend Deadline",
-      description: "Give members more time",
+      description: "Edit the date below, then save",
     },
     {
       Icon: QuickShareIcon,
-      title: "Share Link",
-      description: "Copy & share pool link",
-    },
-  ];
-
-  const poolRules: PoolRule[] = [
-    {
-      label: "Amount Per Person",
-      value: `${perPerson} (fixed)`,
-      action: "Edit",
-      actionColor: "text-primary",
-    },
-    {
-      label: "Deadline",
-      value: closesDate,
-      action: "Extend",
-      actionColor: "text-primary",
-    },
-    {
-      label: "Withdrawal Mode",
-      value: "Take All at Close",
-      action: "—",
-      actionColor: "text-primary",
-    },
-    {
-      label: "Auto Reminders",
-      value: autoReminders ? "Enabled ✓" : "Disabled",
-      action: "Toggle",
-      actionColor: "text-primary",
+      title: copied ? "Copied!" : "Share Link",
+      description: poolLink ?? "Copy & share pool link",
+      onClick: handleCopyLink,
     },
   ];
 
@@ -110,36 +128,89 @@ export default function SettingsTab({
       </div>
 
       {/* Pool Rules */}
-      <div className="flex-1 rounded-2xl border border-border p-5">
+      <form
+        className="flex-1 rounded-2xl border border-border p-5"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void onSave?.({
+            autoReminders: remindersEnabled,
+            deadline,
+            perPersonAmount: amountPerPerson,
+          });
+        }}
+      >
         <h3 className="font-heading text-[15px] font-bold text-text-dark mb-4">
           ⚙️ Pool Rules
         </h3>
-        <div>
-          {poolRules.map((rule, i) => (
-            <div
-              key={i}
-              className={`flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between ${
-                i < poolRules.length - 1 ? "border-b border-border" : ""
-              }`}
-            >
-              <div>
-                <p className="text-[12.5px] font-bold text-text-dark">
-                  {rule.label}
-                </p>
-                <p className="text-[11.5px] text-text-muted mt-0.5">
-                  {rule.value}
-                </p>
-              </div>
-              <button
-                className={`text-[12px] font-bold shrink-0 hover:opacity-70 transition-opacity ${rule.actionColor}`}
-                aria-label={`${rule.action} ${rule.label}`}
-              >
-                {rule.action}
-              </button>
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="flex flex-col gap-2 text-[12.5px] font-bold text-text-dark">
+              Amount Per Person (₦)
+              <input
+                type="number"
+                min="1"
+                value={amountPerPerson}
+                onChange={(event) => setAmountPerPerson(event.target.value)}
+                className="rounded-[12px] border border-border px-4 py-3 text-sm font-medium text-text-dark outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/10"
+              />
+            </label>
+
+            <label className="flex flex-col gap-2 text-[12.5px] font-bold text-text-dark">
+              Deadline
+              <input
+                type="date"
+                value={deadline}
+                onChange={(event) => setDeadline(event.target.value)}
+                className="rounded-[12px] border border-border px-4 py-3 text-sm font-medium text-text-dark outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/10"
+              />
+            </label>
+          </div>
+
+          <label className="flex items-center justify-between rounded-[14px] border border-border px-4 py-3">
+            <div>
+              <p className="text-[12.5px] font-bold text-text-dark">
+                Automatic reminders
+              </p>
+              <p className="text-[11px] text-text-muted">
+                PoolFi will keep nudging unpaid members.
+              </p>
             </div>
-          ))}
+            <input
+              type="checkbox"
+              checked={remindersEnabled}
+              onChange={(event) => setRemindersEnabled(event.target.checked)}
+              className="h-4 w-4 accent-primary"
+            />
+          </label>
+
+          <div className="rounded-[14px] border border-border bg-[#fbfcff] px-4 py-3 text-[12px] text-text-muted">
+            <p className="font-bold text-text-dark">
+              Withdrawal mode: {takeAllAtClose ? "Take All at Close" : "Milestone-based"}
+            </p>
+            <p className="mt-1">
+              Contributions are currently {paused ? "paused" : "active"} for this pool.
+            </p>
+          </div>
         </div>
-      </div>
+
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => void onSendReminders?.()}
+            disabled={isSendingReminders}
+            className="rounded-full border border-border px-5 py-3 text-sm font-bold text-text-dark transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSendingReminders ? "Sending..." : "Send reminders"}
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="rounded-full bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSaving ? "Saving..." : "Save pool settings"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

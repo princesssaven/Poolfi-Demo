@@ -1,10 +1,5 @@
-import CreateAnImpactPool from "@/src/components/locofy/CreateAnImpactPool";
-import ResponsiveArtboard from "@/src/components/ui/ResponsiveArtboard";
+import CreateImpactPoolForm from "@/src/components/create-impact-pool/CreateImpactPoolForm";
 
 export default function Page() {
-  return (
-    <ResponsiveArtboard>
-      <CreateAnImpactPool />
-    </ResponsiveArtboard>
-  );
+  return <CreateImpactPoolForm />;
 }

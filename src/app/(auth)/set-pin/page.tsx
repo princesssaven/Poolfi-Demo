@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AuthHeroPanel from "@/src/components/auth/AuthHeroPanel";
 
@@ -8,6 +8,7 @@ export default function SetPinPage() {
   const router = useRouter();
   const [pin, setPin] = useState<string[]>(["", "", "", ""]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -16,7 +17,10 @@ export default function SetPinPage() {
 
   const handleInput = useCallback(
     (index: number, value: string) => {
-      if (!/^\d*$/.test(value)) return;
+      if (!/^\d*$/.test(value)) {
+        return;
+      }
+
       const digit = value.slice(-1);
       const newPin = [...pin];
       newPin[index] = digit;
@@ -46,27 +50,55 @@ export default function SetPinPage() {
         .replace(/\D/g, "")
         .slice(0, 4);
       const newPin = [...pin];
-      for (let i = 0; i < pasted.length; i++) {
+
+      for (let i = 0; i < pasted.length; i += 1) {
         newPin[i] = pasted[i];
       }
+
       setPin(newPin);
-      const nextEmpty = newPin.findIndex((d) => !d);
+      const nextEmpty = newPin.findIndex((digit) => !digit);
       inputRefs.current[nextEmpty >= 0 ? nextEmpty : 3]?.focus();
     },
     [pin]
   );
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     const fullPin = pin.join("");
-    if (fullPin.length === 4) {
-      setIsSubmitting(true);
-      setTimeout(() => {
-        router.push("/");
-      }, 600);
+
+    if (fullPin.length !== 4) {
+      setErrorMessage("Enter all 4 PIN digits before continuing.");
+      return;
     }
+
+    setErrorMessage("");
+    setIsSubmitting(true);
+
+    const response = await fetch("/api/auth/set-pin", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        pin: fullPin,
+      }),
+    });
+
+    const payload = (await response.json().catch(() => null)) as
+      | { message?: string }
+      | null;
+
+    if (!response.ok) {
+      setErrorMessage(
+        payload?.message ?? "We couldn't save your transaction PIN. Try again."
+      );
+      setIsSubmitting(false);
+      return;
+    }
+
+    router.push("/");
   };
 
-  const isComplete = pin.every((d) => d !== "");
+  const isComplete = pin.every((digit) => digit !== "");
 
   return (
     <>
@@ -74,19 +106,16 @@ export default function SetPinPage() {
 
       <main className="flex flex-1 items-start justify-center overflow-y-auto bg-white px-4 py-10 sm:px-6 sm:py-12 lg:px-12 lg:py-16">
         <div className="w-full max-w-[709px]">
-          {/* Progress indicator — Step 3 of 3 */}
           <div className="mb-2.5 flex items-center gap-1.5">
             <span className="h-1 w-6 rounded-full bg-primary/20" />
             <span className="h-1 w-6 rounded-full bg-primary/20" />
             <span className="h-1 w-6 rounded-full bg-primary" />
           </div>
 
-          {/* Section label */}
           <p className="font-card text-xs font-semibold uppercase tracking-[1px] text-primary">
             Setting Pin
           </p>
 
-          {/* Header */}
           <div className="mt-4 flex flex-col gap-2">
             <h1 className="font-card text-[28px] font-extrabold tracking-[-0.5px] text-text-dark">
               Set your transaction pin
@@ -96,7 +125,14 @@ export default function SetPinPage() {
             </p>
           </div>
 
-          {/* PIN Inputs */}
+          {errorMessage ? (
+            <div className="mt-6 rounded-[10px] border border-danger/20 bg-danger/5 px-4 py-3">
+              <p className="font-card text-sm font-medium text-danger" aria-live="polite">
+                {errorMessage}
+              </p>
+            </div>
+          ) : null}
+
           <div className="mt-6 flex flex-col gap-[13px]">
             <div
               className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-[17px]"
@@ -117,7 +153,7 @@ export default function SetPinPage() {
                   onChange={(e) => handleInput(i, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(i, e)}
                   aria-label={`PIN digit ${i + 1}`}
-                  className={`h-14 w-full rounded-[10px] border text-center font-card text-2xl font-bold transition-all duration-200 outline-none sm:h-[66px] sm:w-[112px] ${
+                  className={`h-14 w-full rounded-[10px] border text-center font-card text-2xl font-bold outline-none transition-all duration-200 sm:h-[66px] sm:w-[112px] ${
                     digit
                       ? "border-primary bg-primary-light text-primary"
                       : "border-border bg-white text-text-dark"
@@ -131,8 +167,8 @@ export default function SetPinPage() {
             </p>
           </div>
 
-          {/* Continue button */}
           <button
+            type="button"
             onClick={handleContinue}
             disabled={!isComplete || isSubmitting}
             className="mt-6 w-full rounded-[10px] bg-primary py-3 font-card text-[15px] font-semibold tracking-[-0.2px] text-white transition-all duration-200 hover:bg-primary-dark active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"

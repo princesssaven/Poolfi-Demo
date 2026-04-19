@@ -13,6 +13,7 @@ import ImpactIcon from "@/src/assets/icons/impact.svg";
 import WalletIcon from "@/src/assets/icons/wallet.svg";
 import NotificationIcon from "@/src/assets/icons/notification.svg";
 import SettingsIcon from "@/src/assets/icons/settings.svg";
+import type { AppUser } from "@/src/lib/auth/user";
 
 const mainNav = [
   {
@@ -68,15 +69,26 @@ interface SidebarProps {
   variant?: "desktop" | "mobile";
   isOpen?: boolean;
   onClose?: () => void;
+  onCreatePool?: () => void;
+  onLogout?: () => void;
+  user?: AppUser | null;
+  isSigningOut?: boolean;
 }
 
 export default function Sidebar({
   variant = "desktop",
   isOpen = false,
   onClose,
+  onCreatePool,
+  onLogout,
+  user,
+  isSigningOut = false,
 }: SidebarProps) {
   const pathname = usePathname();
   const isMobile = variant === "mobile";
+  const userDisplayName = user?.displayName ?? "PoolFi User";
+  const userSecondary = user?.email || user?.pseudonym || "Signed in";
+  const userInitials = user?.initials ?? "PF";
 
   return (
     <aside
@@ -85,7 +97,7 @@ export default function Sidebar({
           ? `fixed inset-y-0 left-0 z-50 flex w-[min(86vw,260px)] max-w-[260px] flex-col border-r border-border bg-white transition-transform duration-200 lg:hidden ${
               isOpen ? "translate-x-0" : "-translate-x-full"
             }`
-          : "fixed inset-y-0 left-0 z-20 hidden w-[260px] flex-col border-r border-border bg-white lg:flex"
+          : "fixed inset-y-0 left-0 z-20 hidden w-[260px] flex-col border-r border-border bg-white/95 backdrop-blur-sm lg:flex"
       }
     >
       <div
@@ -106,7 +118,7 @@ export default function Sidebar({
         )}
       </div>
 
-      <nav className={`flex-1 overflow-y-auto px-3 ${isMobile ? "pt-3" : ""}`}>
+      <nav className={`flex-1 overflow-y-auto px-3 ${isMobile ? "pt-3" : "pt-2"}`}>
         <p className="px-3 mb-1 text-[10px] font-bold tracking-[1px] uppercase text-text-muted">
           Main
         </p>
@@ -116,33 +128,62 @@ export default function Sidebar({
               item.href === "/impact"
                 ? pathname === "/impact" || pathname.startsWith("/impact-")
                 : item.href === "/create-pool-new"
-                  ? pathname === "/create-pool-new" || pathname === "/create-pool"
+                  ? pathname === "/create-pool-new" ||
+                    pathname === "/create-pool" ||
+                    pathname === "/create-impact-pool"
                   : pathname === item.href;
             const Icon = isActive ? item.activeIcon : item.icon;
 
             return (
               <li key={item.href}>
-                <Link
-                  href={item.href}
-                  onClick={isMobile ? onClose : undefined}
-                  className={`flex items-center gap-3 px-4 py-3.5 rounded-[10px] transition-colors text-sm font-medium ${
-                    isActive
-                      ? "bg-primary-light text-primary font-bold"
-                      : "text-text-muted hover:bg-gray-50"
-                  }`}
-                >
-                  <Icon
-                    className={`w-6 h-6 shrink-0 ${
-                      isActive ? "text-primary" : "text-text-muted"
+                {item.href === "/create-pool-new" ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose?.();
+                      onCreatePool?.();
+                    }}
+                    className={`flex w-full items-center gap-3 rounded-[12px] px-4 py-3.5 text-left text-sm font-medium transition-all ${
+                      isActive
+                        ? "bg-primary-light text-primary font-bold shadow-[0_8px_20px_rgba(51,94,255,0.14)]"
+                        : "text-text-muted hover:bg-gray-50"
                     }`}
-                  />
-                  <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="ml-auto bg-warning text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
+                  >
+                    <Icon
+                      className={`h-6 w-6 shrink-0 ${
+                        isActive ? "text-primary" : "text-text-muted"
+                      }`}
+                    />
+                    <span>{item.label}</span>
+                    {item.badge && (
+                      <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-warning text-[10px] font-bold text-white">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                ) : (
+                  <Link
+                    href={item.href}
+                    onClick={isMobile ? onClose : undefined}
+                    className={`flex items-center gap-3 rounded-[12px] px-4 py-3.5 text-sm font-medium transition-all ${
+                      isActive
+                        ? "bg-primary-light text-primary font-bold shadow-[0_8px_20px_rgba(51,94,255,0.14)]"
+                        : "text-text-muted hover:bg-gray-50"
+                    }`}
+                  >
+                    <Icon
+                      className={`w-6 h-6 shrink-0 ${
+                        isActive ? "text-primary" : "text-text-muted"
+                      }`}
+                    />
+                    <span>{item.label}</span>
+                    {item.badge && (
+                      <span className="ml-auto bg-warning text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                )}
               </li>
             );
           })}
@@ -161,9 +202,9 @@ export default function Sidebar({
                 <Link
                   href={item.href}
                   onClick={isMobile ? onClose : undefined}
-                  className={`flex items-center gap-3 px-4 py-3.5 rounded-[10px] transition-colors text-sm font-medium ${
+                  className={`flex items-center gap-3 rounded-[12px] px-4 py-3.5 text-sm font-medium transition-all ${
                     isActive
-                      ? "bg-primary-light text-primary font-bold"
+                      ? "bg-primary-light text-primary font-bold shadow-[0_8px_20px_rgba(51,94,255,0.14)]"
                       : "text-text-muted hover:bg-gray-50"
                   }`}
                 >
@@ -185,21 +226,28 @@ export default function Sidebar({
         </ul>
       </nav>
 
-      <div className="px-4 py-4 border-t border-border flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shrink-0">
-          PS
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-bold text-text-dark truncate">
-            Princess Saven
-          </p>
-          <p className="text-[11px] text-text-muted">Saven</p>
+      <div className="border-t border-border px-4 py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
+            {userInitials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-bold text-text-dark">
+              {userDisplayName}
+            </p>
+            <p className="truncate text-[11px] text-text-muted">{userSecondary}</p>
+          </div>
         </div>
         <button
-          className="text-text-muted text-sm hover:text-text-dark transition-colors"
-          aria-label="More options"
+          type="button"
+          onClick={() => {
+            onClose?.();
+            onLogout?.();
+          }}
+          disabled={isSigningOut}
+          className="mt-3 w-full rounded-[12px] border border-border px-4 py-2.5 text-sm font-medium text-text-dark transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          ⋯
+          {isSigningOut ? "Signing out..." : "Sign out"}
         </button>
       </div>
     </aside>

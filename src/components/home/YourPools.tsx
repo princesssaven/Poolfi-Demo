@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 interface PoolSummary {
+  id: string;
   emoji: string;
   title: string;
   role: string;
@@ -113,7 +114,7 @@ export default function YourPools({ pools }: YourPoolsProps) {
                   )}
                 </div>
                 <Link
-                  href="/pool/1"
+                  href={`/pool/${pool.id}`}
                   className="inline-flex w-fit text-[12px] font-bold text-primary hover:underline"
                 >
                   Manage →

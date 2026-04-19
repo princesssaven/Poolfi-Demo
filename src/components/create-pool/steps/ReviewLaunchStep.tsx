@@ -13,12 +13,14 @@ interface ReviewData {
 
 interface ReviewLaunchStepProps {
   data: ReviewData;
+  isLaunching?: boolean;
   onLaunch: () => void;
   onBack: () => void;
 }
 
 export default function ReviewLaunchStep({
   data,
+  isLaunching = false,
   onLaunch,
   onBack,
 }: ReviewLaunchStepProps) {
@@ -121,9 +123,10 @@ export default function ReviewLaunchStep({
         </button>
         <button
           onClick={onLaunch}
+          disabled={isLaunching}
           className="flex-1 bg-primary text-white text-sm font-semibold font-card py-3 rounded-full hover:bg-primary-dark transition-colors"
         >
-          Launch Pool →
+          {isLaunching ? "Launching..." : "Launch Pool →"}
         </button>
       </div>
     </div>

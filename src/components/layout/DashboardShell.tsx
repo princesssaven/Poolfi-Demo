@@ -1,10 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { signOut } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import CreatePoolModal from "@/src/components/create-pool/CreatePoolModal";
 import Sidebar from "@/src/components/layout/Sidebar";
 import TopHeader from "@/src/components/layout/TopHeader";
+import type { AppUser } from "@/src/lib/auth/user";
 
 function getPageTitle(pathname: string) {
   if (pathname === "/") return "Home";
@@ -37,12 +39,79 @@ export default function DashboardShell({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isCreatePoolModalOpen, setIsCreatePoolModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const pageTitle = useMemo(() => getPageTitle(pathname), [pathname]);
+  const isCreatePoolLauncherRoute = pathname === "/create-pool-new";
+  const isCreatePoolModalVisible =
+    isCreatePoolModalOpen || isCreatePoolLauncherRoute;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCurrentUser = async () => {
+      const response = await fetch("/api/auth/state", {
+        cache: "no-store",
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | { user?: AppUser | null }
+        | null;
+
+      if (!isMounted) {
+        return;
+      }
+
+      setCurrentUser(payload?.user ?? null);
+    };
+
+    void loadCurrentUser();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const openCreatePoolModal = () => {
+    setSidebarOpen(false);
+    setIsCreatePoolModalOpen(true);
+  };
+
+  const closeCreatePoolModal = () => {
+    setIsCreatePoolModalOpen(false);
+
+    if (isCreatePoolLauncherRoute) {
+      router.push("/");
+    }
+  };
+
+  const handleCreatePoolContinue = (type: "goal" | "impact") => {
+    setIsCreatePoolModalOpen(false);
+    router.push(type === "impact" ? "/create-impact-pool" : "/create-pool");
+  };
+
+  const handleLogout = async () => {
+    setIsSigningOut(true);
+    setSidebarOpen(false);
+
+    await fetch("/api/auth/logout", {
+      method: "POST",
+    }).catch(() => null);
+
+    await signOut({
+      redirect: false,
+    }).catch(() => null);
+
+    router.push("/sign-in");
+    router.refresh();
+    setIsSigningOut(false);
+  };
 
   return (
-    <div className="min-h-screen bg-bg-page">
+    <div className="min-h-screen bg-[#f4f7fc]">
       {sidebarOpen && (
         <button
           type="button"
@@ -52,8 +121,22 @@ export default function DashboardShell({
         />
       )}
 
-      <Sidebar variant="mobile" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <Sidebar variant="desktop" />
+      <Sidebar
+        variant="mobile"
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onCreatePool={openCreatePoolModal}
+        onLogout={handleLogout}
+        user={currentUser}
+        isSigningOut={isSigningOut}
+      />
+      <Sidebar
+        variant="desktop"
+        onCreatePool={openCreatePoolModal}
+        onLogout={handleLogout}
+        user={currentUser}
+        isSigningOut={isSigningOut}
+      />
 
       <main className="min-w-0 px-4 py-4 sm:px-6 sm:py-6 lg:ml-[260px] lg:px-8 lg:py-8">
         <div className="mb-4 rounded-2xl border border-border bg-white p-3 shadow-sm lg:hidden">
@@ -61,7 +144,7 @@ export default function DashboardShell({
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border transition-colors hover:bg-gray-50"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-white transition-colors hover:bg-gray-50"
               aria-label="Open navigation"
             >
               <span className="flex flex-col gap-1">
@@ -80,18 +163,27 @@ export default function DashboardShell({
               </h1>
             </div>
 
-            <Link
-              href="/create-pool"
-              className="shrink-0 rounded-full bg-primary px-3 py-2 text-[11px] font-bold text-white transition-colors hover:bg-primary-dark"
+            <button
+              type="button"
+              onClick={openCreatePoolModal}
+              className="shrink-0 rounded-full bg-primary px-3 py-2 text-[11px] font-bold text-white shadow-[0_8px_20px_rgba(51,94,255,0.26)] transition-colors hover:bg-primary-dark"
             >
               Create
-            </Link>
+            </button>
           </div>
         </div>
 
-        <TopHeader />
+        <TopHeader onCreatePool={openCreatePoolModal} user={currentUser} />
         <div className="min-w-0">{children}</div>
       </main>
+
+      {isCreatePoolModalVisible ? (
+        <CreatePoolModal
+          isOpen={isCreatePoolModalVisible}
+          onClose={closeCreatePoolModal}
+          onContinue={handleCreatePoolContinue}
+        />
+      ) : null}
     </div>
   );
 }

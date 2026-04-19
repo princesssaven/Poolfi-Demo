@@ -17,10 +17,21 @@ const steps = [
   { label: "Review & Launch", number: 4 },
 ];
 
+function slugifyPoolName(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export default function CreatePoolPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
-  const [launched, setLaunched] = useState(false);
+  const [isPoolLiveOpen, setIsPoolLiveOpen] = useState(false);
+  const [isLaunchingPool, setIsLaunchingPool] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [createdPoolLink, setCreatedPoolLink] = useState("");
 
   // Step 1 data
   const [basicsData, setBasicsData] = useState({
@@ -53,15 +64,6 @@ export default function CreatePoolPage() {
     members: [] as { name: string; phone: string; custom: string }[],
   });
 
-  if (launched) {
-    return (
-      <PoolLiveSuccess
-        poolLink="poolfi.app/pool/unilag-class-dues-2025-x7k9m"
-        onBackToDashboard={() => router.push("/")}
-      />
-    );
-  }
-
   const formatDeadline = (dateStr: string) => {
     if (!dateStr) return "";
     try {
@@ -76,6 +78,44 @@ export default function CreatePoolPage() {
     }
   };
 
+  const poolNameForLink = basicsData.name || "300L Class Dues";
+  const poolSlug = slugifyPoolName(poolNameForLink) || "unilag-class-dues-2025";
+  const poolLink = `poolfi.app/pool/${poolSlug}-x7k9m`;
+
+  const launchPool = async () => {
+    setErrorMessage("");
+    setIsLaunchingPool(true);
+
+    const response = await fetch("/api/pools", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        basics: basicsData,
+        members: membersData,
+        rules: rulesData,
+        type: "goal",
+      }),
+    });
+
+    const payload = (await response.json().catch(() => null)) as
+      | { message?: string; poolLink?: string }
+      | null;
+
+    if (!response.ok) {
+      setErrorMessage(
+        payload?.message ?? "We couldn't launch your pool right now. Try again."
+      );
+      setIsLaunchingPool(false);
+      return;
+    }
+
+    setCreatedPoolLink(payload?.poolLink ?? poolLink);
+    setIsPoolLiveOpen(true);
+    setIsLaunchingPool(false);
+  };
+
   return (
     <div>
       {/* Top bar */}
@@ -87,7 +127,7 @@ export default function CreatePoolPage() {
                 ? setCurrentStep(currentStep - 1)
                 : router.push("/")
             }
-            className="text-[13px] font-semibold font-card text-text-muted hover:text-text-dark transition-colors"
+            className="text-[13px] font-semibold font-card text-text-muted transition-colors hover:text-text-dark"
           >
             ←
           </button>
@@ -95,7 +135,7 @@ export default function CreatePoolPage() {
             Create Goal Pool
           </h1>
         </div>
-        <button className="bg-primary text-white px-5 py-2 rounded-full text-xs font-semibold font-card hover:bg-primary-dark transition-colors">
+        <button className="rounded-full bg-primary px-5 py-2 text-xs font-semibold font-card text-white shadow-[0_10px_24px_rgba(51,94,255,0.24)] transition-colors hover:bg-primary-dark">
           Preview
         </button>
       </div>
@@ -108,6 +148,12 @@ export default function CreatePoolPage() {
           onStepClick={setCurrentStep}
         />
       </div>
+
+      {errorMessage ? (
+        <div className="mb-6 rounded-[18px] border border-danger/20 bg-danger/5 px-4 py-3 text-sm font-medium text-danger">
+          {errorMessage}
+        </div>
+      ) : null}
 
       {/* Content area */}
       <div className="flex flex-col gap-7 xl:flex-row">
@@ -146,7 +192,8 @@ export default function CreatePoolPage() {
                 deadline: formatDeadline(basicsData.deadline) || "7 Mar 2026",
                 slots: membersData.members.length || 400,
               }}
-              onLaunch={() => setLaunched(true)}
+              isLaunching={isLaunchingPool}
+              onLaunch={launchPool}
               onBack={() => setCurrentStep(3)}
             />
           )}
@@ -160,6 +207,13 @@ export default function CreatePoolPage() {
           perPerson={basicsData.perPerson || undefined}
         />
       </div>
+
+      <PoolLiveSuccess
+        isOpen={isPoolLiveOpen}
+        onClose={() => setIsPoolLiveOpen(false)}
+        poolLink={createdPoolLink || poolLink}
+        onBackToDashboard={() => router.push("/")}
+      />
     </div>
   );
 }
