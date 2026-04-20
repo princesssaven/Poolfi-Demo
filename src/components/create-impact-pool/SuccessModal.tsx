@@ -78,7 +78,7 @@ export default function SuccessModal({
             Submitted for Review
           </h2>
           <p className="mb-8 text-[13.5px] leading-relaxed text-text-muted font-card max-w-[380px]">
-            Your impact pool has been submitted. Here's what happens next while you
+            Your impact pool has been submitted. Here&apos;s what happens next while you
             wait
           </p>
 

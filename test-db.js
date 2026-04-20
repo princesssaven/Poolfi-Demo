@@ -1,4 +1,5 @@
-const postgres = require('postgres');
+import postgres from 'postgres';
+
 const url = process.env.DATABASE_URL;
 console.log("Connecting to:", url.replace(/:[^:@]*@/, ':***@'));
 const sql = postgres(url, { max: 1, idle_timeout: 1 });

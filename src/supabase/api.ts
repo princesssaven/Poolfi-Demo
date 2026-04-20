@@ -8,7 +8,7 @@ export const fetchData = async (tableName: string) => {
   return data;
 };
 
-export const insertData = async (tableName: string, data: any) => {
+export const insertData = async (tableName: string, data: Record<string, unknown>) => {
   const { data: insertedData, error } = await supabase
     .from(tableName)
     .insert(data);
