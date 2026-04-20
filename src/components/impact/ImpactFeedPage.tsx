@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 type CategoryKey =
   | "all"
@@ -19,16 +19,18 @@ interface ImpactCategory {
   icon: string;
 }
 
-interface ImpactPoolCard {
-  id: number;
-  category: Exclude<CategoryKey, "all">;
-  categoryLabel: string;
-  title: string;
+interface ImpactPoolCardData {
+  id: string;
+  category: string;
+  name: string;
   description: string;
+  problem: string;
   raised: number;
-  target: number;
-  contributors: number;
-  accent: string;
+  targetAmount: number;
+  contributorCount: number;
+  location?: string;
+  beneficiaries?: string;
+  evidenceUrls?: string[];
 }
 
 const categories: ImpactCategory[] = [
@@ -42,126 +44,79 @@ const categories: ImpactCategory[] = [
   { key: "energy", label: "Energy", icon: "⚡" },
 ];
 
-const impactPools: ImpactPoolCard[] = [
-  {
-    id: 1,
-    category: "education",
-    categoryLabel: "Education",
-    title: "Scholarship Fund for Indigent UNIBEN Students",
-    description: "Supporting 20 students who can't afford fees this semester.",
-    raised: 270000,
-    target: 500000,
-    contributors: 128,
-    accent: "#8b5cf6",
-  },
-  {
-    id: 2,
-    category: "education",
-    categoryLabel: "Education",
-    title: "Scholarship Fund for Indigent UNIBEN Students",
-    description: "Supporting 20 students who can't afford fees this semester.",
-    raised: 270000,
-    target: 500000,
-    contributors: 128,
-    accent: "#8b5cf6",
-  },
-  {
-    id: 3,
-    category: "education",
-    categoryLabel: "Education",
-    title: "Scholarship Fund for Indigent UNIBEN Students",
-    description: "Supporting 20 students who can't afford fees this semester.",
-    raised: 270000,
-    target: 500000,
-    contributors: 128,
-    accent: "#8b5cf6",
-  },
-  {
-    id: 4,
-    category: "health",
-    categoryLabel: "Health",
-    title: "Primary Health Outreach for Rural Mothers",
-    description: "Funding mobile screenings, prenatal kits, and follow-up care.",
-    raised: 185000,
-    target: 400000,
-    contributors: 96,
-    accent: "#ec4899",
-  },
-  {
-    id: 5,
-    category: "water",
-    categoryLabel: "Water & Sanitation",
-    title: "Clean Water Access for Oguta East",
-    description: "Building storage tanks and repairing damaged pipe routes.",
-    raised: 320000,
-    target: 750000,
-    contributors: 143,
-    accent: "#14b8a6",
-  },
-  {
-    id: 6,
-    category: "infrastructure",
-    categoryLabel: "Infrastructure",
-    title: "Solar Streetlights for Campus Hostel Road",
-    description: "Improving safety at night with community-maintained lighting.",
-    raised: 490000,
-    target: 900000,
-    contributors: 201,
-    accent: "#f59e0b",
-  },
-];
+function getCategoryAccent(category: string) {
+  switch (category) {
+    case "education": return "#8b5cf6";
+    case "health": return "#ec4899";
+    case "water": return "#14b8a6";
+    case "infrastructure": return "#f59e0b";
+    case "agriculture": return "#12b76a";
+    case "welfare": return "#f97316";
+    case "energy": return "#3b82f6";
+    default: return "#1b4fd8";
+  }
+}
 
-const featuredPool = {
-  raised: 670000,
-  target: 1000000,
-};
+function getCategoryEmoji(category: string) {
+  switch (category) {
+    case "water": return "💧";
+    case "education": return "🎓";
+    case "health": return "🏥";
+    case "agriculture": return "🌾";
+    case "infrastructure": return "🏗️";
+    case "welfare": return "🎗️";
+    case "energy": return "⚡";
+    default: return "🌍";
+  }
+}
 
 function formatCurrency(amount: number) {
   return `₦${amount.toLocaleString("en-NG")}`;
 }
 
-function ImpactPoolCard({ pool }: { pool: ImpactPoolCard }) {
-  const percentage = Math.min(Math.round((pool.raised / pool.target) * 100), 100);
+function ImpactPoolCard({ pool }: { pool: ImpactPoolCardData }) {
+  const percentage = Math.min(Math.round((pool.raised / pool.targetAmount) * 100), 100);
+  const accent = getCategoryAccent(pool.category);
 
   return (
     <article className="overflow-hidden rounded-[18px] border border-border bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-      <div className="h-1.5 w-full" style={{ backgroundColor: pool.accent }} />
+      <div className="h-1.5 w-full" style={{ backgroundColor: accent }} />
 
       <div className="space-y-4 p-5">
         <div className="space-y-2">
           <p className="text-[10px] font-bold uppercase tracking-[1px] text-text-muted">
-            {pool.category === "education" ? "🎓" : "🌍"} {pool.categoryLabel}
+            {getCategoryEmoji(pool.category)} {pool.category.charAt(0).toUpperCase() + pool.category.slice(1)}
           </p>
           <h3 className="font-heading text-[17px] font-bold leading-[1.35] text-text-dark">
-            {pool.title}
+            {pool.name}
           </h3>
-          <p className="text-[14px] leading-6 text-text-muted">
-            {pool.description}
+          <p className="text-[14px] leading-6 text-text-muted line-clamp-2">
+            {pool.description || pool.problem}
           </p>
         </div>
 
         <div className="space-y-2">
           <div className="h-1.5 overflow-hidden rounded-full bg-bg-page">
             <div
-              className="h-full rounded-full"
-              style={{ width: `${percentage}%`, backgroundColor: pool.accent }}
+              className="h-full rounded-full transition-all duration-700 ease-out"
+              style={{ width: `${percentage}%`, backgroundColor: accent }}
             />
           </div>
           <div className="flex items-center justify-between gap-4 text-[13px]">
             <span className="font-heading text-[15px] font-bold text-text-dark">
               {formatCurrency(pool.raised)}
             </span>
-            <span className="text-text-muted">{percentage}% of {formatCurrency(pool.target)}</span>
+            <span className="text-text-muted">{percentage}% of {formatCurrency(pool.targetAmount)}</span>
           </div>
         </div>
       </div>
 
       <div className="flex items-center justify-between gap-4 border-t border-border bg-[#fbfcfe] px-5 py-3.5">
         <span className="text-[13px] text-text-muted">
-          {pool.contributors} contributors
+          {pool.contributorCount} contributors
         </span>
         <Link
-          href="/impact-contribution"
+          href={`/pool/${pool.id}`}
           className="inline-flex items-center rounded-xl bg-primary-light px-4 py-2 text-[13px] font-bold text-primary transition-colors hover:bg-primary/15"
         >
           Give →
@@ -173,14 +128,34 @@ function ImpactPoolCard({ pool }: { pool: ImpactPoolCard }) {
 
 export default function ImpactFeedPage() {
   const [activeCategory, setActiveCategory] = useState<CategoryKey>("all");
+  const [impactPools, setImpactPools] = useState<ImpactPoolCardData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchPools() {
+      try {
+        const res = await fetch("/api/pools/impact");
+        if (res.ok) {
+          const data = await res.json();
+          setImpactPools(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch impact pools", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchPools();
+  }, []);
 
   const visiblePools = useMemo(() => {
     if (activeCategory === "all") {
       return impactPools;
     }
-
     return impactPools.filter((pool) => pool.category === activeCategory);
-  }, [activeCategory]);
+  }, [activeCategory, impactPools]);
+
+  const featuredPool = impactPools[0] || null;
 
   return (
     <div className="w-full space-y-5">
@@ -277,6 +252,7 @@ export default function ImpactFeedPage() {
               "linear-gradient(135deg, rgba(5,106,89,1) 0%, rgba(8,117,95,1) 55%, rgba(15,131,106,1) 100%)",
           }}
         >
+        {featuredPool ? (
           <div className="flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
             <div className="max-w-[680px] space-y-5">
               <div className="inline-flex items-center rounded-full bg-white/12 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[1px] text-white/90">
@@ -285,27 +261,26 @@ export default function ImpactFeedPage() {
 
               <div className="space-y-3">
                 <h3 className="font-heading text-[28px] font-extrabold leading-[1.15] tracking-[-0.8px] text-white sm:text-[34px]">
-                  Clean Water Borehole for Oguta Community, Imo State
+                  {featuredPool.name}
                 </h3>
 
                 <p className="max-w-[700px] text-[15px] leading-8 text-white/70 sm:text-[17px]">
-                  3,000+ residents walk 2km daily for water. This pool funds a
-                  functional borehole and distribution network. All withdrawal
-                  requests require community approval.
+                  {featuredPool.description || featuredPool.problem}
                 </p>
               </div>
 
               <div className="flex flex-wrap gap-2.5">
-                {["💧 Water", "📍 Imo State", "🏘️ Community", "✅ Verified"].map(
-                  (tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-white/12 px-4 py-1.5 text-[12px] font-semibold text-white/85"
-                    >
-                      {tag}
-                    </span>
-                  )
+                <span className="rounded-full bg-white/12 px-4 py-1.5 text-[12px] font-semibold text-white/85">
+                  {getCategoryEmoji(featuredPool.category)} {featuredPool.category}
+                </span>
+                {featuredPool.location && (
+                  <span className="rounded-full bg-white/12 px-4 py-1.5 text-[12px] font-semibold text-white/85">
+                    📍 {featuredPool.location}
+                  </span>
                 )}
+                <span className="rounded-full bg-white/12 px-4 py-1.5 text-[12px] font-semibold text-white/85">
+                  ✅ Verified
+                </span>
               </div>
             </div>
 
@@ -315,14 +290,14 @@ export default function ImpactFeedPage() {
                   {formatCurrency(featuredPool.raised)}
                 </p>
                 <span className="text-[14px] font-bold text-emerald-light">
-                  {Math.round((featuredPool.raised / featuredPool.target) * 100)}%
+                  {Math.round((featuredPool.raised / featuredPool.targetAmount) * 100)}%
                 </span>
               </div>
 
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/20">
                 <div 
-                  className="h-full rounded-full bg-emerald-light transition-all duration-500" 
-                  style={{ width: `${Math.round((featuredPool.raised / featuredPool.target) * 100)}%` }}
+                  className="h-full rounded-full bg-emerald-light transition-all duration-1000 ease-out" 
+                  style={{ width: `${Math.round((featuredPool.raised / featuredPool.targetAmount) * 100)}%` }}
                 />
               </div>
 
@@ -343,24 +318,40 @@ export default function ImpactFeedPage() {
                     </span>
                   ))}
                 </div>
-                <span className="text-[14px] text-white/70">+342 contributors</span>
+                <span className="text-[14px] text-white/70">+{featuredPool.contributorCount} contributors</span>
               </div>
 
               <Link
-                href="/impact-contribution"
+                href={`/pool/${featuredPool.id}`}
                 className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-white px-5 py-3.5 text-[15px] font-bold text-teal-dark transition-colors hover:bg-white/90"
               >
                 Contribute to this Pool →
               </Link>
             </div>
           </div>
+        ) : (
+          <div className="py-12 text-center">
+            <p className="text-white/60">No featured pools available at the moment.</p>
+          </div>
+        )}
         </div>
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
-        {visiblePools.map((pool) => (
-          <ImpactPoolCard key={pool.id} pool={pool} />
-        ))}
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-[280px] animate-pulse rounded-[18px] bg-bg-page" />
+          ))
+        ) : visiblePools.length > 0 ? (
+          visiblePools.map((pool) => (
+            <ImpactPoolCard key={pool.id} pool={pool} />
+          ))
+        ) : (
+          <div className="col-span-full py-20 text-center">
+            <p className="text-lg font-bold text-text-dark">No impact pools found</p>
+            <p className="text-text-muted">Be the first to create one!</p>
+          </div>
+        )}
       </section>
     </div>
   );
