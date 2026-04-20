@@ -3,6 +3,8 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import SuccessModal from "./SuccessModal";
+import FileUploadDropzone, { type FileWithPreview } from "@/src/components/ui/FileUploadDropzone";
+import { supabaseStorageClient } from "@/src/lib/supabase/client";
 
 /* ─── tiny reusable bits ─── */
 
@@ -234,6 +236,8 @@ function LivePreviewCard({
 export default function CreateImpactPoolForm() {
   const router = useRouter();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [evidenceFiles, setEvidenceFiles] = useState<FileWithPreview[]>([]);
 
   const [form, setForm] = useState({
     title: "",
@@ -261,9 +265,62 @@ export default function CreateImpactPoolForm() {
 
   const handleCancel = () => router.push("/");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowSuccessModal(true);
+    
+    try {
+      setIsUploading(true);
+      
+      const uploadedUrls: string[] = [];
+      
+      // Upload evidence files to Supabase Storage
+      if (evidenceFiles.length > 0) {
+        for (const file of evidenceFiles) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+          const filePath = `${fileName}`;
+          
+          const { error: uploadError } = await supabaseStorageClient.storage
+            .from('pool-evidence')
+            .upload(filePath, file);
+            
+          if (uploadError) {
+            console.error("Upload error:", uploadError);
+            throw new Error(`Failed to upload ${file.name}`);
+          }
+          
+          const { data } = supabaseStorageClient.storage
+            .from('pool-evidence')
+            .getPublicUrl(filePath);
+            
+          uploadedUrls.push(data.publicUrl);
+        }
+      }
+      
+      // Submit to API
+      const response = await fetch("/api/pools", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          evidenceUrls: uploadedUrls,
+          type: "impact",
+          approversCount: form.approvers,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to create pool");
+      }
+      
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert(error instanceof Error ? error.message : "An error occurred while submitting.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   /* ─── shared input classes ─── */
@@ -493,17 +550,11 @@ export default function CreateImpactPoolForm() {
             desc="Verified pools get more contributions. Upload proof of the problem — photos, documents, or links."
           >
             {/* Drop zone */}
-            <div className="flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-border bg-bg-page px-6 py-10 transition-colors hover:border-primary/40 cursor-pointer">
-              <CameraIcon />
-              <div className="text-center">
-                <p className="text-[17px] font-bold tracking-tight text-text-dark font-heading">
-                  Upload photos or documents
-                </p>
-                <p className="mt-1 text-[13px] text-text-muted font-card">
-                  JPG, PNG, PDF. Max 5mb per file
-                </p>
-              </div>
-            </div>
+            <FileUploadDropzone 
+              onFilesChange={setEvidenceFiles}
+              maxFiles={5}
+              maxSizeMB={5}
+            />
 
             <div>
               <FormLabel htmlFor="pool-reference" optional>
@@ -531,9 +582,12 @@ export default function CreateImpactPoolForm() {
             </button>
             <button
               type="submit"
-              className="flex-1 rounded-[10px] bg-primary py-3.5 text-sm font-semibold text-white transition-all hover:bg-primary-dark shadow-[0_8px_20px_rgba(27,79,216,0.22)] font-card"
+              disabled={isUploading}
+              className={`flex-1 rounded-[10px] bg-primary py-3.5 text-sm font-semibold text-white transition-all shadow-[0_8px_20px_rgba(27,79,216,0.22)] font-card ${
+                isUploading ? "opacity-70 cursor-not-allowed" : "hover:bg-primary-dark"
+              }`}
             >
-              Submit for Review →
+              {isUploading ? "Uploading..." : "Submit for Review →"}
             </button>
           </div>
         </div>

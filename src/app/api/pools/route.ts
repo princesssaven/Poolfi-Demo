@@ -46,55 +46,80 @@ export async function POST(request: NextRequest) {
       takeAllAtClose: boolean;
     };
     type?: "goal" | "impact";
+    // Impact direct fields
+    problem?: string;
+    moneyUsage?: string;
+    location?: string;
+    beneficiaries?: string;
+    evidenceUrls?: string[];
+    approversCount?: string;
+    referenceLink?: string;
+    // For impact pools, we might have these directly or in basics
+    fundingTarget?: string;
+    deadline?: string;
+    title?: string;
+    suggestedContribution?: string;
   }>;
 
   const basics = body.basics;
   const rules = body.rules;
   const members = body.members;
+  const isImpact = body.type === "impact";
 
-  if (!basics || !rules || !members) {
+  if (!isImpact && (!basics || !rules || !members)) {
     return NextResponse.json(
       { message: "Complete every step before launching your pool." },
       { status: 400 }
     );
   }
 
-  const targetAmount = parseCurrencyInput(basics.targetAmount ?? "");
-  const perPersonAmount = parseCurrencyInput(basics.perPerson ?? "");
+  const targetAmount = parseCurrencyInput(isImpact ? (body.fundingTarget ?? "") : (basics?.targetAmount ?? ""));
+  const perPersonAmount = parseCurrencyInput(isImpact ? (body.suggestedContribution ?? "") : (basics?.perPerson ?? ""));
+  const name = isImpact ? body.title : basics?.name;
+  const deadline = isImpact ? body.deadline : basics?.deadline;
+  const startDate = isImpact ? new Date().toISOString() : basics?.startDate;
 
-  if (!basics.name?.trim() || !basics.startDate || !basics.deadline) {
+  if (!name?.trim() || !startDate || !deadline) {
     return NextResponse.json(
       { message: "Pool name, start date, and deadline are required." },
       { status: 400 }
     );
   }
 
-  if (targetAmount <= 0 || perPersonAmount <= 0) {
+  if (targetAmount <= 0) {
     return NextResponse.json(
-      { message: "Target amount and contribution per person must be valid numbers." },
+      { message: "Target amount must be a valid number." },
       { status: 400 }
     );
   }
 
   const createdPool = await createPool({
-    allowAnonymous: rules.allowAnonymous,
-    autoClose: rules.autoClose,
-    autoReminders: rules.autoReminders,
-    category: basics.category || "education",
-    customFields: members.customFields,
-    deadline: new Date(basics.deadline),
-    description: basics.description ?? "",
-    identityFields: members.identityFields,
-    members: members.members,
-    milestoneWithdrawals: rules.milestoneWithdrawals,
-    milestones: rules.milestones,
-    name: basics.name,
+    allowAnonymous: rules?.allowAnonymous ?? true,
+    autoClose: rules?.autoClose ?? false,
+    autoReminders: rules?.autoReminders ?? false,
+    category: basics?.category || (isImpact ? "community" : "education"),
+    customFields: members?.customFields ?? [],
+    deadline: new Date(deadline),
+    description: isImpact ? (body.problem ?? "") : (basics?.description ?? ""),
+    identityFields: members?.identityFields ?? [],
+    members: members?.members ?? [],
+    milestoneWithdrawals: rules?.milestoneWithdrawals ?? true,
+    milestones: rules?.milestones ?? [],
+    name: name,
     ownerId: user.id,
     perPersonAmount,
-    startDate: new Date(basics.startDate),
-    takeAllAtClose: rules.takeAllAtClose,
+    startDate: new Date(startDate),
+    takeAllAtClose: rules?.takeAllAtClose ?? false,
     targetAmount,
     type: body.type ?? "goal",
+    // Impact fields
+    problem: body.problem,
+    moneyUsage: body.moneyUsage,
+    location: body.location,
+    beneficiaries: body.beneficiaries,
+    evidenceUrls: body.evidenceUrls,
+    approversCount: body.approversCount,
+    referenceLink: body.referenceLink,
   });
 
   return NextResponse.json({

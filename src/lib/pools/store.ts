@@ -28,6 +28,14 @@ interface CreatePoolInput {
   category: string;
   allowAnonymous: boolean;
   type?: "goal" | "impact";
+  // Impact specific
+  problem?: string;
+  moneyUsage?: string;
+  location?: string;
+  beneficiaries?: string;
+  evidenceUrls?: string[];
+  approversCount?: string;
+  referenceLink?: string;
 }
 
 interface UpdatePoolSettingsInput {
@@ -203,6 +211,14 @@ export async function createPool(input: CreatePoolInput) {
       targetAmount: input.targetAmount,
       type: input.type ?? "goal",
       updatedAt: new Date(),
+      // Impact fields
+      problem: input.problem,
+      moneyUsage: input.moneyUsage,
+      location: input.location,
+      beneficiaries: input.beneficiaries,
+      evidenceUrls: input.evidenceUrls ?? [],
+      approversCount: input.approversCount,
+      referenceLink: input.referenceLink,
     })
     .returning();
 

@@ -127,6 +127,17 @@ export const pools = pgTable(
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    // Impact Pool specific fields
+    problem: text("problem"),
+    moneyUsage: text("money_usage"),
+    location: text("location"),
+    beneficiaries: text("beneficiaries"),
+    evidenceUrls: jsonb("evidence_urls")
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    approversCount: text("approvers_count"),
+    referenceLink: text("reference_link"),
   },
   (table) => [uniqueIndex("pools_slug_idx").on(table.slug)]
 );
