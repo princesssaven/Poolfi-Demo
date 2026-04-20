@@ -48,6 +48,10 @@ export async function GET() {
       .where(eq(poolMembers.poolId, pool.id))
       .orderBy(desc(poolMembers.paidAt));
 
+    const paidMembers = members.filter((member) => member.status === "paid");
+    const contributorCount = paidMembers.length;
+    const raised = contributorCount * pool.perPersonAmount;
+
     const activities = await getDb()
       .select()
       .from(poolActivities)
@@ -65,6 +69,8 @@ export async function GET() {
       data: {
         pool: {
           ...pool,
+          contributorCount,
+          raised,
           ownerName: buildOwnerName(owner ?? null),
           deadline: pool.deadline.toISOString(),
           startDate: pool.startDate.toISOString(),
@@ -72,8 +78,15 @@ export async function GET() {
           closedAt: pool.closedAt?.toISOString() ?? null,
           cancelledAt: pool.cancelledAt?.toISOString() ?? null,
         },
-        members,
-        activities,
+        members: members.map((member) => ({
+          ...member,
+          invitedAt: member.invitedAt.toISOString(),
+          paidAt: member.paidAt?.toISOString() ?? null,
+        })),
+        activities: activities.map((activity) => ({
+          ...activity,
+          createdAt: activity.createdAt.toISOString(),
+        })),
       },
     });
   } catch (error) {

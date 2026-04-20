@@ -13,11 +13,18 @@ interface ImpactSpotlightProps {
 }
 
 function formatCurrency(amount: number): string {
-  return `₦${amount.toLocaleString("en-NG")}`;
+  const safeAmount = Number.isFinite(amount) ? amount : 0;
+  return `₦${safeAmount.toLocaleString("en-NG")}`;
 }
 
 export default function ImpactSpotlight({ pool }: ImpactSpotlightProps) {
-  const targetPercentage = Math.min(Math.round((pool.raised / pool.target) * 100), 100);
+  const safeRaised = Number.isFinite(pool.raised) ? pool.raised : 0;
+  const safeTarget = Number.isFinite(pool.target) ? pool.target : 0;
+  const targetForPercentage = safeTarget > 0 ? safeTarget : 1;
+  const targetPercentage = Math.min(
+    Math.round((safeRaised / targetForPercentage) * 100),
+    100
+  );
   const [width, setWidth] = useState(0);
 
   useEffect(() => {
@@ -67,10 +74,10 @@ export default function ImpactSpotlight({ pool }: ImpactSpotlightProps) {
 
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-white text-xs font-bold">
-            {formatCurrency(pool.raised)} raised
+            {formatCurrency(safeRaised)} raised
           </span>
           <span className="text-white/60 text-[11px]">
-            {targetPercentage}% of {formatCurrency(pool.target)}
+            {targetPercentage}% of {formatCurrency(safeTarget)}
           </span>
         </div>
 
