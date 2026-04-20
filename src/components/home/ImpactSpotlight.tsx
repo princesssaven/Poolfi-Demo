@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface FeaturedPool {
   title: string;
@@ -16,7 +17,13 @@ function formatCurrency(amount: number): string {
 }
 
 export default function ImpactSpotlight({ pool }: ImpactSpotlightProps) {
-  const percentage = Math.round((pool.raised / pool.target) * 100);
+  const targetPercentage = Math.min(Math.round((pool.raised / pool.target) * 100), 100);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setWidth(targetPercentage), 100);
+    return () => clearTimeout(timer);
+  }, [targetPercentage]);
 
   return (
     <div>
@@ -53,8 +60,8 @@ export default function ImpactSpotlight({ pool }: ImpactSpotlightProps) {
         {/* Progress bar */}
         <div className="w-full h-[5px] bg-white/20 rounded-full mb-2 overflow-hidden">
           <div
-            className="h-full bg-emerald-light rounded-full transition-all duration-500"
-            style={{ width: `${percentage}%` }}
+            className="h-full bg-emerald-light rounded-full transition-all duration-1000 ease-out"
+            style={{ width: `${width}%` }}
           />
         </div>
 
@@ -63,7 +70,7 @@ export default function ImpactSpotlight({ pool }: ImpactSpotlightProps) {
             {formatCurrency(pool.raised)} raised
           </span>
           <span className="text-white/60 text-[11px]">
-            {percentage}% of {formatCurrency(pool.target)}
+            {targetPercentage}% of {formatCurrency(pool.target)}
           </span>
         </div>
 

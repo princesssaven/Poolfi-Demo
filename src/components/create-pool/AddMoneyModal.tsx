@@ -6,13 +6,17 @@ import Modal, { ModalHeader } from "@/src/components/ui/Modal";
 interface AddMoneyModalProps {
   isOpen: boolean;
   onClose: () => void;
+  depositMemo?: string;
 }
 
 const tabs = ["Bank Transfer", "Card", "USDC"] as const;
 type Tab = (typeof tabs)[number];
 
-export default function AddMoneyModal({ isOpen, onClose }: AddMoneyModalProps) {
+export default function AddMoneyModal({ isOpen, onClose, depositMemo }: AddMoneyModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>("Bank Transfer");
+  
+  const stellarAddress = process.env.NEXT_PUBLIC_STELLAR_RECEIVER_ADDRESS || "Not configured";
+  const memoDisplay = depositMemo || "Loading...";
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="650px">
@@ -66,14 +70,32 @@ export default function AddMoneyModal({ isOpen, onClose }: AddMoneyModalProps) {
         )}
 
         {activeTab === "USDC" && (
-          <div className="rounded-[16px] bg-[#f7f9fc] p-8 text-center text-sm font-card text-text-muted">
-            USDC payment coming soon
+          <div className="flex flex-col gap-8 rounded-[18px] border border-[#e5ebf6] bg-[#f7f9fc] px-4 py-5 sm:px-5 sm:py-6">
+            <div>
+              <p className="font-card text-[11px] font-semibold uppercase tracking-[1px] text-text-muted">
+                Stellar Network Address
+              </p>
+              <p className="mt-3 break-all font-heading text-[14px] font-bold text-text-dark sm:text-[15px]">
+                {stellarAddress}
+              </p>
+            </div>
+            <div>
+              <p className="font-card text-[11px] font-semibold uppercase tracking-[1px] text-text-muted">
+                Memo (Required)
+              </p>
+              <p className="mt-3 font-heading text-[16px] font-bold text-text-dark sm:text-[17px]">
+                {memoDisplay}
+              </p>
+            </div>
           </div>
         )}
 
         <p className="font-card text-[11px] font-semibold uppercase leading-[15px] tracking-[1px] text-text-muted">
-          Transfer any amount from your bank. Funds arrive in 2–5 minutes via
-          Yellow Card. Your wallet will be credited automatically.
+          {activeTab === "Bank Transfer" &&
+            "Transfer any amount from your bank. Funds arrive in 2–5 minutes via Yellow Card. Your wallet will be credited automatically."}
+          {activeTab === "USDC" &&
+            "Send only USDC on the Stellar network to this address. Ensure you include the memo. Funds will be credited after network confirmation."}
+          {activeTab === "Card" && "Card payments will be available soon."}
         </p>
       </div>
     </Modal>

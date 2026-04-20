@@ -1,4 +1,5 @@
 export interface AppUser {
+  depositMemo: string;
   displayName: string;
   email: string;
   firstName: string;
@@ -9,6 +10,7 @@ export interface AppUser {
 }
 
 interface UserLike {
+  depositMemo?: string | null;
   email?: string | null;
   firstName?: string | null;
   image?: string | null;
@@ -54,6 +56,7 @@ export function normalizeAppUser(user: UserLike | null | undefined): AppUser | n
     [firstName, lastName].filter(Boolean).join(" ") || derivedName || derivedPseudonym;
 
   return {
+    depositMemo: user.depositMemo ?? "",
     displayName,
     email,
     firstName,

@@ -61,6 +61,7 @@ export default function HomePage() {
   const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
   const [data, setData] = useState<HomeDashboardData>(emptyHomeData);
   const [errorMessage, setErrorMessage] = useState("");
+  const [depositMemo, setDepositMemo] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -87,7 +88,21 @@ export default function HomePage() {
       setData(payload.data);
     };
 
+    const loadUserMemo = async () => {
+      const response = await fetch("/api/auth/state", { cache: "no-store" });
+      const payload = (await response.json().catch(() => null)) as
+        | { user?: { depositMemo?: string } | null }
+        | null;
+
+      if (!isMounted) {
+        return;
+      }
+
+      setDepositMemo(payload?.user?.depositMemo ?? "");
+    };
+
     void loadHomeData();
+    void loadUserMemo();
 
     return () => {
       isMounted = false;
@@ -123,6 +138,7 @@ export default function HomePage() {
       <AddMoneyModal
         isOpen={isAddMoneyOpen}
         onClose={() => setIsAddMoneyOpen(false)}
+        depositMemo={depositMemo}
       />
     </div>
   );

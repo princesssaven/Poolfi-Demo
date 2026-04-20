@@ -111,6 +111,11 @@ const impactPools: ImpactPoolCard[] = [
   },
 ];
 
+const featuredPool = {
+  raised: 670000,
+  target: 1000000,
+};
+
 function formatCurrency(amount: number) {
   return `₦${amount.toLocaleString("en-NG")}`;
 }
@@ -307,13 +312,18 @@ export default function ImpactFeedPage() {
             <div className="w-full rounded-[22px] bg-white/10 p-5 backdrop-blur-sm sm:max-w-[320px] lg:p-6">
               <div className="flex items-center justify-between gap-4">
                 <p className="font-heading text-[24px] font-extrabold text-white sm:text-[34px]">
-                  ₦670,000
+                  {formatCurrency(featuredPool.raised)}
                 </p>
-                <span className="text-[14px] font-bold text-emerald-light">67%</span>
+                <span className="text-[14px] font-bold text-emerald-light">
+                  {Math.round((featuredPool.raised / featuredPool.target) * 100)}%
+                </span>
               </div>
 
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/20">
-                <div className="h-full w-[67%] rounded-full bg-emerald-light" />
+                <div 
+                  className="h-full rounded-full bg-emerald-light transition-all duration-500" 
+                  style={{ width: `${Math.round((featuredPool.raised / featuredPool.target) * 100)}%` }}
+                />
               </div>
 
               <div className="mt-5 flex items-center gap-3">

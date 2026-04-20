@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 interface ProgressSectionProps {
   raised: number;
   target: number;
@@ -19,7 +21,13 @@ export default function ProgressSection({
   totalYetToPay,
   isCompleted = false,
 }: ProgressSectionProps) {
-  const percentage = Math.min(Math.round((raised / target) * 100), 100);
+  const targetPercentage = Math.min(Math.round((raised / target) * 100), 100);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setWidth(targetPercentage), 100);
+    return () => clearTimeout(timer);
+  }, [targetPercentage]);
 
   return (
     <div className="rounded-lg border border-border p-5 sm:p-6">
@@ -34,19 +42,19 @@ export default function ProgressSection({
               : "text-primary border-primary/30"
           }`}
         >
-          {percentage}% {isCompleted ? "completed" : "funded"}
+          {targetPercentage}% {isCompleted ? "completed" : "funded"}
         </span>
       </div>
 
       {/* Progress bar */}
       <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-2">
         <div
-          className={`h-full rounded-full transition-all duration-700 ease-out ${
+          className={`h-full rounded-full transition-all duration-1000 ease-out ${
             isCompleted
               ? "bg-success"
               : "bg-gradient-to-r from-primary to-[#5b8ef0]"
           }`}
-          style={{ width: `${percentage}%` }}
+          style={{ width: `${width}%` }}
         />
       </div>
 

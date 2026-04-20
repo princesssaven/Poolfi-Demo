@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import LogoIcon from "@/src/assets/icons/logo.svg";
 import CloseIcon from "@/src/assets/icons/close.svg";
 import HomeIcon from "@/src/assets/icons/home.svg";
@@ -33,7 +34,6 @@ const mainNav = [
     href: "/my-pools",
     icon: MyPoolsIcon,
     activeIcon: MyPoolsActiveIcon,
-    badge: 3,
   },
   {
     label: "Impact",
@@ -55,7 +55,6 @@ const accountNav = [
     href: "/notifications",
     icon: NotificationIcon,
     activeIcon: NotificationIcon,
-    badge: 2,
   },
   {
     label: "Settings",
@@ -89,6 +88,30 @@ export default function Sidebar({
   const userDisplayName = user?.displayName ?? "PoolFi User";
   const userSecondary = user?.email || user?.pseudonym || "Signed in";
   const userInitials = user?.initials ?? "PF";
+
+  const [badgeCounts, setBadgeCounts] = useState<{ unreadNotifications: number; activePools: number }>({ unreadNotifications: 0, activePools: 0 });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadBadges = async () => {
+      try {
+        const response = await fetch("/api/badges", { cache: "no-store" });
+        const data = await response.json();
+        if (isMounted) {
+          setBadgeCounts(data);
+        }
+      } catch {
+        // silently ignore
+      }
+    };
+
+    void loadBadges();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <aside
@@ -155,11 +178,6 @@ export default function Sidebar({
                       }`}
                     />
                     <span>{item.label}</span>
-                    {item.badge && (
-                      <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-warning text-[10px] font-bold text-white">
-                        {item.badge}
-                      </span>
-                    )}
                   </button>
                 ) : (
                   <Link
@@ -177,9 +195,9 @@ export default function Sidebar({
                       }`}
                     />
                     <span>{item.label}</span>
-                    {item.badge && (
+                    {item.href === "/my-pools" && badgeCounts.activePools > 0 && (
                       <span className="ml-auto bg-warning text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                        {item.badge}
+                        {badgeCounts.activePools}
                       </span>
                     )}
                   </Link>
@@ -214,9 +232,9 @@ export default function Sidebar({
                     }`}
                   />
                   <span>{item.label}</span>
-                  {item.badge && (
+                  {item.href === "/notifications" && badgeCounts.unreadNotifications > 0 && (
                     <span className="ml-auto bg-danger text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                      {item.badge}
+                      {badgeCounts.unreadNotifications}
                     </span>
                   )}
                 </Link>

@@ -30,6 +30,7 @@ export const users = pgTable(
     passwordHash: text("password_hash"),
     pinHash: text("pin_hash"),
     googleId: text("google_id"),
+    depositMemo: text("deposit_memo").unique().notNull().default(sql`floor(random() * 900000000 + 100000000)::text`),
     emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -38,6 +39,7 @@ export const users = pgTable(
     uniqueIndex("users_email_idx").on(table.email),
     uniqueIndex("users_google_id_idx").on(table.googleId),
     uniqueIndex("users_pseudonym_canonical_idx").on(table.pseudonymCanonical),
+    uniqueIndex("users_deposit_memo_idx").on(table.depositMemo),
   ]
 );
 

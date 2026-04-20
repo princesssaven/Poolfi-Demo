@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface PoolSummary {
   id: string;
@@ -20,6 +21,23 @@ interface YourPoolsProps {
 
 function formatCurrency(amount: number): string {
   return `₦${amount.toLocaleString("en-NG")}`;
+}
+
+function AnimatedProgressBar({ raised, target }: { raised: number; target: number }) {
+  const targetPercentage = Math.min(Math.round((raised / target) * 100), 100);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setWidth(targetPercentage), 100);
+    return () => clearTimeout(timer);
+  }, [targetPercentage]);
+
+  return (
+    <div
+      className="h-full bg-primary rounded-full transition-all duration-1000 ease-out"
+      style={{ width: `${width}%` }}
+    />
+  );
 }
 
 export default function YourPools({ pools }: YourPoolsProps) {
@@ -84,12 +102,7 @@ export default function YourPools({ pools }: YourPoolsProps) {
                   </span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all duration-500"
-                    style={{
-                      width: `${Math.min((pool.raised / pool.target) * 100, 100)}%`,
-                    }}
-                  />
+                  <AnimatedProgressBar raised={pool.raised} target={pool.target} />
                 </div>
               </div>
 

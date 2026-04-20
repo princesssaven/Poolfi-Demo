@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import type { PoolCardData } from "@/src/data/mockData";
 
 function formatCurrency(amount: number): string {
@@ -35,10 +36,16 @@ interface PoolCardProps {
 }
 
 export default function PoolCard({ pool }: PoolCardProps) {
-  const percentage = Math.min(
+  const targetPercentage = Math.min(
     Math.round((pool.raised / pool.target) * 100),
     100
   );
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setWidth(targetPercentage), 100);
+    return () => clearTimeout(timer);
+  }, [targetPercentage]);
   const isCompleted = pool.status === "completed";
   const footerWarning =
     pool.footer.left.includes("days left") ||
@@ -98,12 +105,12 @@ export default function PoolCard({ pool }: PoolCardProps) {
           }`}
         >
           <div
-            className={`h-full rounded-full transition-all duration-500 ${
+            className={`h-full rounded-full transition-all duration-1000 ease-out ${
               isCompleted
                 ? "bg-success"
                 : progressColors[pool.role] || "bg-primary"
             }`}
-            style={{ width: `${percentage}%` }}
+            style={{ width: `${width}%` }}
           />
         </div>
 
@@ -113,7 +120,7 @@ export default function PoolCard({ pool }: PoolCardProps) {
           <span>
             {isCompleted
               ? "100% — Completed"
-              : `${percentage}% of ${formatCurrency(pool.target)}`}
+              : `${targetPercentage}% of ${formatCurrency(pool.target)}`}
           </span>
         </div>
 

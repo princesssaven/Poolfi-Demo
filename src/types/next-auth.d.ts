@@ -7,6 +7,7 @@ declare module "next-auth" {
       firstName: string;
       lastName: string;
       pseudonym: string;
+      depositMemo: string;
     };
   }
 }
@@ -17,5 +18,6 @@ declare module "next-auth/jwt" {
     firstName?: string;
     lastName?: string;
     pseudonym?: string;
+    depositMemo?: string;
   }
 }

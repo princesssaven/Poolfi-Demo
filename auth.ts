@@ -51,7 +51,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         Boolean(account) ||
         !token.userId ||
         !token.firstName ||
-        !token.pseudonym;
+        !token.pseudonym ||
+        !token.depositMemo;
 
       if (!shouldRefreshUser) {
         return token;
@@ -73,6 +74,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           .join(" ")
           .trim() || token.name;
       token.pseudonym = existingUser.pseudonym;
+      token.depositMemo = existingUser.depositMemo;
 
       return token;
     },
@@ -85,6 +87,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           typeof token.lastName === "string" ? token.lastName : "";
         session.user.pseudonym =
           typeof token.pseudonym === "string" ? token.pseudonym : "";
+        session.user.depositMemo =
+          typeof token.depositMemo === "string" ? token.depositMemo : "";
         session.user.image =
           typeof token.picture === "string"
             ? token.picture
