@@ -3,6 +3,7 @@ import {
   boolean,
   integer,
   jsonb,
+  numeric,
   pgTable,
   text,
   timestamp,
@@ -32,6 +33,7 @@ export const users = pgTable(
     googleId: text("google_id"),
     depositMemo: text("deposit_memo").unique().notNull().default(sql`floor(random() * 900000000 + 100000000)::text`),
     emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+    walletBalance: numeric("wallet_balance", { precision: 20, scale: 7 }).notNull().default("0"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -181,7 +183,28 @@ export const poolActivities = pgTable("pool_activities", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const deposits = pgTable(
+  "deposits",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id").notNull(),
+    stellarTxHash: text("stellar_tx_hash").notNull(),
+    amount: numeric("amount", { precision: 20, scale: 7 }).notNull(),
+    asset: text("asset").notNull().default("USDC"),
+    memo: text("memo").notNull(),
+    sourceAccount: text("source_account"),
+    status: text("status").notNull().default("confirmed"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("deposits_stellar_tx_hash_idx").on(table.stellarTxHash),
+  ]
+);
+
 export type DatabaseUser = typeof users.$inferSelect;
 export type DatabasePendingSignup = typeof pendingSignups.$inferSelect;
 export type DatabasePool = typeof pools.$inferSelect;
 export type DatabasePoolMember = typeof poolMembers.$inferSelect;
+export type DatabaseDeposit = typeof deposits.$inferSelect;
