@@ -59,6 +59,12 @@ interface FeaturedPoolData {
   location?: string;
 }
 
+interface LatestFeaturedPoolPayload {
+  data?: {
+    pool?: FeaturedPoolData;
+  };
+}
+
 const fallbackFeaturedPool = {
   title: "Clean Water for Oguta Community, Imo State",
   description:
@@ -73,7 +79,6 @@ export default function HomePage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [depositMemo, setDepositMemo] = useState("");
   const [featuredPool, setFeaturedPool] = useState<FeaturedPoolData | null>(null);
-  const [featuredPoolError, setFeaturedPoolError] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -114,23 +119,26 @@ export default function HomePage() {
     };
 
     const loadFeaturedPool = async () => {
-      const response = await fetch("/api/pools/impact", {
-        cache: "no-store",
-      });
-      const payload = (await response.json().catch(() => null)) as any;
+      try {
+        const response = await fetch("/api/pools/impact/latest", {
+          cache: "no-store",
+        });
+        const payload = (await response.json().catch(() => null)) as
+          | LatestFeaturedPoolPayload
+          | null;
 
-      if (!isMounted) {
+        if (
+          !isMounted ||
+          !response.ok ||
+          !payload?.data?.pool
+        ) {
+          return;
+        }
+
+        setFeaturedPool(payload.data.pool);
+      } catch {
         return;
       }
-
-      if (!response.ok || !Array.isArray(payload) || payload.length === 0) {
-        setFeaturedPoolError(
-          "We couldn't load a featured impact pool right now."
-        );
-        return;
-      }
-
-      setFeaturedPool(payload[0]);
     };
 
     void loadHomeData();
@@ -147,12 +155,6 @@ export default function HomePage() {
       {errorMessage ? (
         <div className="mb-6 rounded-[18px] border border-danger/20 bg-danger/5 px-4 py-3 text-sm font-medium text-danger">
           {errorMessage}
-        </div>
-      ) : null}
-
-      {featuredPoolError ? (
-        <div className="mb-6 rounded-[18px] border border-warning/20 bg-warning/5 px-4 py-3 text-sm font-medium text-warning">
-          {featuredPoolError}
         </div>
       ) : null}
 

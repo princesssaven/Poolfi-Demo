@@ -307,6 +307,40 @@ export async function getNotificationsForUser(userId: string) {
     .orderBy(desc(notifications.createdAt));
 }
 
+export async function getImpactPoolsViewData() {
+  const impactPools = await getDb()
+    .select()
+    .from(pools)
+    .where(eq(pools.type, "impact"))
+    .orderBy(desc(pools.createdAt));
+
+  const memberLists = impactPools.length
+    ? await Promise.all(impactPools.map((pool) => getMembersForPool(pool.id)))
+    : [];
+
+  return impactPools.map((pool, index) => {
+    const members = memberLists[index] ?? [];
+    const paidCount = members.filter((member) => member.status === "paid").length;
+
+    return {
+      beneficiaries: pool.beneficiaries ?? undefined,
+      category: pool.category,
+      contributorCount: paidCount,
+      deadline: pool.deadline.toISOString(),
+      description: pool.description,
+      evidenceUrls: pool.evidenceUrls,
+      id: pool.id,
+      location: pool.location ?? undefined,
+      name: pool.name,
+      perPersonAmount: pool.perPersonAmount,
+      problem: pool.problem ?? undefined,
+      raised: paidCount * pool.perPersonAmount,
+      status: pool.status,
+      targetAmount: pool.targetAmount,
+    };
+  });
+}
+
 export async function getHomeDashboardData(userId: string) {
   const ownedPools = await getPoolsOwnedByUser(userId);
   const poolIds = ownedPools.map((pool) => pool.id);
