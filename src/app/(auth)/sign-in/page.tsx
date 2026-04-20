@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -8,7 +8,7 @@ import AuthHeroPanel from "@/src/components/auth/AuthHeroPanel";
 import AuthTabToggle from "@/src/components/auth/AuthTabToggle";
 import GoogleIcon from "@/src/assets/icons/google.svg";
 
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [emailOrPhone, setEmailOrPhone] = useState("");
@@ -209,5 +209,13 @@ export default function SignInPage() {
         </div>
       </main>
     </>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense>
+      <SignInForm />
+    </Suspense>
   );
 }

@@ -385,6 +385,8 @@ export default function ImpactContributionPage() {
           amount: impactPool?.perPersonAmount ?? 0,
           time: member.paidAt ? formatRelativeTime(member.paidAt) : "Pending",
           color: ["#3159f1", "#12b76a", "#7c3aed", "#0891b2", "#e11d48", "#16a34a"][index % 6],
+          isYou: false as const,
+          anonymous: false as const,
         }))
       : recentContributors;
 

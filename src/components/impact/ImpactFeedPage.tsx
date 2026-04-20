@@ -31,6 +31,7 @@ interface ImpactPoolCardData {
   location?: string;
   beneficiaries?: string;
   evidenceUrls?: string[];
+  status?: string;
 }
 
 const categories: ImpactCategory[] = [
