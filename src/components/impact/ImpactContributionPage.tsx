@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Toggle from "@/src/components/ui/Toggle";
 
 interface BudgetItem {
@@ -32,6 +32,49 @@ interface ContributorItem {
   color: string;
   isYou?: boolean;
   anonymous?: boolean;
+}
+
+interface ImpactPoolData {
+  id: string;
+  category: string;
+  name: string;
+  description?: string;
+  problem?: string;
+  raised: number;
+  targetAmount: number;
+  contributorCount: number;
+  location?: string;
+  beneficiaries?: string;
+  deadline: string;
+  perPersonAmount: number;
+  status: string;
+  moneyUsage?: string;
+  milestones?: Array<{ label: string; percentage: string }>;
+  approversCount?: string;
+  ownerName?: string;
+}
+
+interface ImpactPoolMember {
+  id: string;
+  name: string;
+  phone: string;
+  customFieldValue: string;
+  status: "paid" | "pending";
+  invitedAt: string;
+  paidAt: string | null;
+}
+
+interface ImpactPoolActivity {
+  id: string;
+  kind: string;
+  message: string;
+  createdAt: string;
+}
+
+interface ImpactContributionDetails {
+  pool: ImpactPoolData;
+  members: ImpactPoolMember[];
+  activities: ImpactPoolActivity[];
 }
 
 const contributionOptions = [500, 1000, 2000, 5000];
@@ -176,9 +219,196 @@ function formatCurrency(amount: number) {
   return `₦${amount.toLocaleString("en-NG")}`;
 }
 
+function formatRelativeTime(value: string) {
+  const date = new Date(value);
+  const diff = Date.now() - date.getTime();
+
+  if (diff < 60000) {
+    return "Just now";
+  }
+
+  if (diff < 3600000) {
+    return `${Math.round(diff / 60000)} min ago`;
+  }
+
+  if (diff < 86400000) {
+    return `${Math.round(diff / 3600000)} hrs ago`;
+  }
+
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function truncateSentence(message: string) {
+  const sentence = message.split(". ")[0];
+  return sentence.length > 65 ? `${sentence.slice(0, 62)}...` : sentence;
+}
+
 export default function ImpactContributionPage() {
   const [selectedAmount, setSelectedAmount] = useState(1000);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [impactDetails, setImpactDetails] = useState<ImpactContributionDetails | null>(null);
+  const [isLoadingPool, setIsLoadingPool] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadImpactPool = async () => {
+      try {
+        const response = await fetch("/api/pools/impact/latest", { cache: "no-store" });
+        const payload = (await response.json().catch(() => null)) as
+          | { data?: ImpactContributionDetails; message?: string }
+          | null;
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (!response.ok || !payload?.data) {
+          setLoadError(payload?.message ?? "We couldn't load the impact pool right now.");
+          return;
+        }
+
+        setImpactDetails(payload.data);
+      } catch (error) {
+        console.error(error);
+        if (isMounted) {
+          setLoadError("We couldn't load the impact pool right now.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingPool(false);
+        }
+      }
+    };
+
+    void loadImpactPool();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const impactPool = impactDetails?.pool ?? null;
+  const members = impactDetails?.members ?? [];
+  const activities = impactDetails?.activities ?? [];
+
+  const daysLeft = impactPool
+    ? Math.max(
+        0,
+        Math.ceil(
+          (new Date(impactPool.deadline).getTime() - Date.now()) /
+            (1000 * 60 * 60 * 24)
+        )
+      )
+    : 0;
+
+  const poolTitle = impactPool?.name ?? "Loading impact pool...";
+  const poolDescription = impactPool?.description ?? impactPool?.problem ?? "";
+  const poolLocation = impactPool?.location ?? "Unknown location";
+  const poolDeadline = impactPool
+    ? new Date(impactPool.deadline).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "";
+  const poolRaised = impactPool?.raised ?? 0;
+  const poolTarget = impactPool?.targetAmount ?? 0;
+  const poolContributors = impactPool?.contributorCount ?? 0;
+  const poolPerPerson = impactPool ? `₦${impactPool.perPersonAmount.toLocaleString("en-NG")}` : "";
+  const poolProgress = poolTarget ? Math.min(100, Math.round((poolRaised / poolTarget) * 100)) : 0;
+  const poolShortfall = Math.max(poolTarget - poolRaised, 0);
+
+  const budgetItemsData = impactPool?.milestones?.length
+    ? impactPool.milestones.map((item, index) => {
+        const percentage = Number(item.percentage) || 0;
+        return {
+          label: item.label || `Milestone ${index + 1}`,
+          amount: Math.round((poolTarget * percentage) / 100),
+          percentage,
+          color: ["#12b76a", "#f79009", "#1b4fd8", "#8b5cf6"][index % 4],
+        };
+      })
+    : budgetItems;
+
+  const updatesData = activities.length > 0
+    ? activities.slice(0, 3).map((activity, index) => {
+        const title = truncateSentence(activity.message);
+        const body = activity.message.replace(title, "").trim();
+
+        return {
+          id: index + 1,
+          author: impactPool?.ownerName ?? "Creator",
+          role: "Creator",
+          date: `${new Date(activity.createdAt).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })} · Update #${index + 1}`,
+          title: title || "Pool update",
+          body: body || activity.message,
+          reactions:
+            index === 0
+              ? [
+                  { icon: "❤️", count: 142 },
+                  { icon: "🎉", count: 89 },
+                  { icon: "💬", count: 14 },
+                ]
+              : [
+                  { icon: "❤️", count: 98 },
+                  { icon: "🎉", count: 213 },
+                ],
+          imageEmoji: index === 0 ? "🚰" : undefined,
+        };
+      })
+    : updates;
+
+  const paidMembers = members.filter((member) => member.status === "paid");
+  const recentContributorsData =
+    paidMembers.length > 0
+      ? paidMembers.slice(0, 8).map((member, index) => ({
+          id: member.id,
+          initials:
+            member.name
+              .split(/\s+/)
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((part) => part.charAt(0).toUpperCase())
+              .join("") || "PF",
+          name: member.name,
+          handle: member.customFieldValue || member.phone || "Contributor",
+          amount: impactPool?.perPersonAmount ?? 0,
+          time: member.paidAt ? formatRelativeTime(member.paidAt) : "Pending",
+          color: ["#3159f1", "#12b76a", "#7c3aed", "#0891b2", "#e11d48", "#16a34a"][index % 6],
+        }))
+      : recentContributors;
+
+  const totalPaidContributors = paidMembers.length || recentContributors.length;
+  const poolOwnerName = impactPool?.ownerName ?? "Creator";
+  const approversText = impactPool?.approversCount ?? "3 of 5";
+  const releasedValue = impactPool ? formatCurrency(Math.round(poolRaised * 0.2)) : "–";
+  const pendingValue = impactPool?.status === "active" ? "Yes" : "No";
+
+  if (isLoadingPool) {
+    return (
+      <div className="mx-auto w-full max-w-[1180px] rounded-[24px] border border-border bg-white px-6 py-8 text-center text-text-muted">
+        Loading impact pool…
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="mx-auto w-full max-w-[1180px] rounded-[24px] border border-danger/20 bg-danger/5 px-6 py-8 text-center text-danger">
+        {loadError}
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-[1180px] space-y-5">
@@ -192,15 +422,13 @@ export default function ImpactContributionPage() {
 
           <div className="space-y-3">
             <h1 className="max-w-[760px] font-heading text-[30px] font-extrabold leading-[1.08] tracking-[-0.8px] text-white sm:text-[38px] lg:text-[48px]">
-              Clean Water Borehole for
-              <br />
-              Oguta Community, Imo State
+              {poolTitle}
             </h1>
 
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px] text-white/70 sm:text-[16px]">
-              <span>📍 Oguta, Imo State</span>
-              <span>📅 Deadline March 15, 2026</span>
-              <span>👤 Created by Chukwuemeka Dike</span>
+              <span>📍 {poolLocation}</span>
+              <span>📅 Deadline {poolDeadline}</span>
+              <span>👥 {poolContributors.toLocaleString("en-NG")} contributors</span>
             </div>
           </div>
 
@@ -208,27 +436,27 @@ export default function ImpactContributionPage() {
             {[
               {
                 label: "Raised",
-                value: "₦670,000",
+                value: `₦${poolRaised.toLocaleString("en-NG")}`,
                 valueClass: "text-emerald-light",
-                sub: "of ₦1,000,000 target",
+                sub: `of ₦${poolTarget.toLocaleString("en-NG")} target`,
               },
               {
                 label: "Contributors",
-                value: "342",
+                value: `${poolContributors.toLocaleString("en-NG")}`,
                 valueClass: "text-white",
-                sub: "from 14 states",
+                sub: "from the community",
               },
               {
-                label: "Withdrawals",
-                value: "1 Approved",
+                label: "Per person",
+                value: poolPerPerson || "–",
                 valueClass: "text-white",
-                sub: "₦200k released",
+                sub: "Pledged amount",
               },
               {
                 label: "Days Left",
-                value: "25",
+                value: `${daysLeft}`,
                 valueClass: "text-yellow",
-                sub: "Closes Mar 15, 2026",
+                sub: `Closes ${poolDeadline}`,
               },
             ].map((stat, index) => (
               <div
@@ -256,20 +484,23 @@ export default function ImpactContributionPage() {
             <div className="space-y-4 p-5 sm:p-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="font-heading text-[28px] font-extrabold tracking-[-0.5px] text-text-dark">
-                  ₦670,000 raised
+                  ₦{poolRaised.toLocaleString("en-NG")} raised
                 </h2>
                 <span className="inline-flex w-fit rounded-full bg-primary-light px-4 py-2 text-[13px] font-bold text-primary">
-                  78% funded
+                  {poolProgress}% funded
                 </span>
               </div>
 
               <div className="h-3 overflow-hidden rounded-full bg-bg-page">
-                <div className="h-full w-[78%] rounded-full bg-primary" />
+                <div
+                  className="h-full rounded-full bg-primary"
+                  style={{ width: `${poolProgress}%` }}
+                />
               </div>
 
               <div className="flex flex-col gap-1 text-[14px] text-text-muted sm:flex-row sm:items-center sm:justify-between">
-                <span>₦330,000 still needed</span>
-                <span>Target: ₦1,000,000</span>
+                <span>₦{poolShortfall.toLocaleString("en-NG")} still needed</span>
+                <span>Target: ₦{poolTarget.toLocaleString("en-NG")}</span>
               </div>
             </div>
           </section>
@@ -283,32 +514,22 @@ export default function ImpactContributionPage() {
 
             <div className="space-y-6 p-5 sm:p-6">
               <div className="space-y-5 text-[16px] leading-9 text-text-muted">
+                <p>{poolDescription || "This impact pool is helping a community secure funding for urgently needed infrastructure."}</p>
                 <p>
-                  Over 3,000 residents of Oguta in Imo State currently walk an
-                  average of 2 kilometres daily to access clean water. The
-                  community has no functioning borehole, and surface water
-                  sources are contaminated. This has led to recurring cases of
-                  cholera and waterborne diseases, especially among children.
-                </p>
-                <p>
-                  This pool funds the drilling, casing, and installation of a
-                  mechanised borehole with a solar-powered pump and a community
-                  distribution network. The project is being executed in
-                  partnership with a certified water engineering firm in Owerri.
+                  {impactPool?.beneficiaries
+                    ? `This project serves ${impactPool.beneficiaries} people in ${poolLocation}. The funds will be used to reach the target and enable a sustainable outcome for the community.`
+                    : "This project is structured to deliver measurable impact once the target is met."}
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
-                  ["Beneficiaries", "3,000+ residents"],
-                  ["Location", "Oguta, Imo State"],
-                  ["Implementing Partner", "AquaTech NG Ltd"],
-                  ["Expected Completion", "April 2026"],
+                  ["Beneficiaries", impactPool?.beneficiaries ?? "N/A"],
+                  ["Location", poolLocation],
+                  ["Per person", poolPerPerson || "N/A"],
+                  ["Deadline", poolDeadline || "TBD"],
                 ].map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="rounded-2xl bg-[#f7f9fc] px-4 py-3.5"
-                  >
+                  <div key={label} className="rounded-2xl bg-[#f7f9fc] px-4 py-3.5">
                     <p className="text-[12px] font-semibold uppercase tracking-[1px] text-text-muted">
                       {label}
                     </p>
@@ -329,7 +550,7 @@ export default function ImpactContributionPage() {
             </div>
 
             <div className="space-y-6 p-5 sm:p-6">
-              {budgetItems.map((item) => (
+              {budgetItemsData.map((item) => (
                 <div key={item.label} className="space-y-2.5">
                   <div className="flex items-center justify-between gap-4">
                     <h3 className="font-heading text-[18px] font-bold text-text-dark">
@@ -365,18 +586,22 @@ export default function ImpactContributionPage() {
             </div>
 
             <div className="space-y-5 p-5 sm:p-6">
-              {updates.map((update) => (
+              {updatesData.map((update, index) => (
                 <article
                   key={update.id}
                   className={`space-y-4 ${
-                    update.id !== updates[updates.length - 1]?.id
+                    index !== updatesData.length - 1
                       ? "border-b border-border pb-6"
                       : ""
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-dark text-[15px] font-bold text-white">
-                      CD
+                      {poolOwnerName
+                        .split(/\s+/)
+                        .slice(0, 2)
+                        .map((part) => part.charAt(0).toUpperCase())
+                        .join("")}
                     </div>
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -429,16 +654,16 @@ export default function ImpactContributionPage() {
                 href="/contributors"
                 className="text-[13px] font-bold text-primary hover:underline"
               >
-                View all 342 →
+                View all {totalPaidContributors} →
               </Link>
             </div>
 
             <div>
-              {recentContributors.map((contributor, index) => (
+              {recentContributorsData.map((contributor, index) => (
                 <div
                   key={contributor.id}
                   className={`flex items-center gap-3 px-5 py-4 sm:px-6 ${
-                    index < recentContributors.length - 1
+                    index < recentContributorsData.length - 1
                       ? "border-b border-border"
                       : ""
                   }`}
@@ -574,9 +799,9 @@ export default function ImpactContributionPage() {
 
             <div className="mt-4 grid grid-cols-3 gap-2.5">
               {[
-                ["Approvers", "3 of 5"],
-                ["Released", "₦200k"],
-                ["Pending", "No"],
+                ["Approvers", approversText],
+                ["Released", releasedValue],
+                ["Pending", pendingValue],
               ].map(([label, value]) => (
                 <div
                   key={label}

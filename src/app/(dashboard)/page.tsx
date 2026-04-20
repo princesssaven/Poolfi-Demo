@@ -49,12 +49,22 @@ const emptyHomeData: HomeDashboardData = {
   pools: [],
 };
 
-const featuredPool = {
+interface FeaturedPoolData {
+  id: string;
+  name: string;
+  description?: string;
+  problem?: string;
+  raised: number;
+  targetAmount: number;
+  location?: string;
+}
+
+const fallbackFeaturedPool = {
+  title: "Clean Water for Oguta Community, Imo State",
   description:
     "Help build a functioning borehole for 3,000+ residents who currently walk 2km daily for water.",
   raised: 670000,
   target: 1000000,
-  title: "Clean Water for Oguta Community, Imo State",
 };
 
 export default function HomePage() {
@@ -62,6 +72,8 @@ export default function HomePage() {
   const [data, setData] = useState<HomeDashboardData>(emptyHomeData);
   const [errorMessage, setErrorMessage] = useState("");
   const [depositMemo, setDepositMemo] = useState("");
+  const [featuredPool, setFeaturedPool] = useState<FeaturedPoolData | null>(null);
+  const [featuredPoolError, setFeaturedPoolError] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -101,8 +113,29 @@ export default function HomePage() {
       setDepositMemo(payload?.user?.depositMemo ?? "");
     };
 
+    const loadFeaturedPool = async () => {
+      const response = await fetch("/api/pools/impact", {
+        cache: "no-store",
+      });
+      const payload = (await response.json().catch(() => null)) as any;
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (!response.ok || !Array.isArray(payload) || payload.length === 0) {
+        setFeaturedPoolError(
+          "We couldn't load a featured impact pool right now."
+        );
+        return;
+      }
+
+      setFeaturedPool(payload[0]);
+    };
+
     void loadHomeData();
     void loadUserMemo();
+    void loadFeaturedPool();
 
     return () => {
       isMounted = false;
@@ -114,6 +147,12 @@ export default function HomePage() {
       {errorMessage ? (
         <div className="mb-6 rounded-[18px] border border-danger/20 bg-danger/5 px-4 py-3 text-sm font-medium text-danger">
           {errorMessage}
+        </div>
+      ) : null}
+
+      {featuredPoolError ? (
+        <div className="mb-6 rounded-[18px] border border-warning/20 bg-warning/5 px-4 py-3 text-sm font-medium text-warning">
+          {featuredPoolError}
         </div>
       ) : null}
 
@@ -130,7 +169,18 @@ export default function HomePage() {
 
         {/* Right column */}
         <div className="flex w-full shrink-0 flex-col gap-6 xl:w-[384px]">
-          <ImpactSpotlight pool={featuredPool} />
+          <ImpactSpotlight
+            pool={
+              featuredPool
+                ? {
+                    title: featuredPool.name,
+                    description: featuredPool.description ?? featuredPool.problem ?? "",
+                    raised: featuredPool.raised,
+                    target: featuredPool.targetAmount,
+                  }
+                : fallbackFeaturedPool
+            }
+          />
           <RecentActivitySidebar activities={data.activities} />
         </div>
       </div>

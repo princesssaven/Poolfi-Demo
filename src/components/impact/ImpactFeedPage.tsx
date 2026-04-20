@@ -148,6 +148,25 @@ export default function ImpactFeedPage() {
     fetchPools();
   }, []);
 
+  const poolStats = useMemo(() => {
+    const totalRaised = impactPools.reduce((sum, pool) => sum + pool.raised, 0);
+    const totalContributors = impactPools.reduce(
+      (sum, pool) => sum + pool.contributorCount,
+      0
+    );
+    const activePools = impactPools.filter((pool) => pool.status === "active").length;
+    const completedPools = impactPools.filter(
+      (pool) => pool.status === "completed"
+    ).length;
+
+    return [
+      { value: `₦${totalRaised.toLocaleString("en-NG")}`, label: "Total Raised" },
+      { value: String(totalContributors), label: "Contributors" },
+      { value: String(activePools), label: "Active Pools" },
+      { value: String(completedPools), label: "Completed" },
+    ];
+  }, [impactPools]);
+
   const visiblePools = useMemo(() => {
     if (activeCategory === "all") {
       return impactPools;
@@ -185,12 +204,7 @@ export default function ImpactFeedPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {[
-              { value: "₦48.2M", label: "Total Raised" },
-              { value: "1,240", label: "Contributors" },
-              { value: "34", label: "Active Pools" },
-              { value: "12", label: "Completed" },
-            ].map((stat) => (
+            {poolStats.map((stat) => (
               <div key={stat.label}>
                 <p className="font-heading text-[22px] font-extrabold text-white sm:text-[28px]">
                   {stat.value}
