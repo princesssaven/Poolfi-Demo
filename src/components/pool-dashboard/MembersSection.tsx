@@ -18,12 +18,14 @@ interface MembersSectionProps {
   actionPending?: "cancel" | "close" | "pause" | "resume" | null;
   autoReminders?: boolean;
   deadlineValue?: string;
+  isExportingCsv?: boolean;
   isSavingSettings?: boolean;
   isSendingReminders?: boolean;
   totalMembers: number;
   paidCount: number;
   pendingCount: number;
   members: Member[];
+  onExportCsv?: () => void | Promise<void>;
   onPoolAction?: (action: "cancel" | "close" | "pause" | "resume") => void | Promise<void>;
   onSaveSettings?: (input: {
     autoReminders: boolean;
@@ -51,12 +53,14 @@ export default function MembersSection({
   actionPending = null,
   autoReminders = true,
   deadlineValue = "",
+  isExportingCsv = false,
   isSavingSettings = false,
   isSendingReminders = false,
   totalMembers,
   paidCount,
   pendingCount,
   members,
+  onExportCsv,
   onPoolAction,
   onSaveSettings,
   onSendReminders,
@@ -155,8 +159,13 @@ export default function MembersSection({
             </div>
 
             {/* Remind All Unpaid */}
-            <button className="flex w-full items-center justify-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-bold text-text-dark transition-colors hover:bg-gray-50 sm:w-fit">
-              🔔 Remind All Unpaid
+            <button
+              type="button"
+              onClick={() => void onSendReminders?.()}
+              disabled={isSendingReminders}
+              className="flex w-full items-center justify-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-bold text-text-dark transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-fit"
+            >
+              {isSendingReminders ? "Sending..." : "🔔 Remind All Unpaid"}
             </button>
           </div>
 
@@ -241,8 +250,10 @@ export default function MembersSection({
         <SettingsTab
           autoReminders={autoReminders}
           closesDate={deadlineValue || closesDate}
+          isExportingCsv={isExportingCsv}
           isSaving={isSavingSettings}
           isSendingReminders={isSendingReminders}
+          onExportCsv={onExportCsv}
           onSave={onSaveSettings}
           onSendReminders={onSendReminders}
           paused={paused}

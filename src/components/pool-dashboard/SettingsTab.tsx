@@ -1,23 +1,54 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import QuickExportIcon from "@/src/assets/icons/quick-export.svg";
 import QuickCalendarIcon from "@/src/assets/icons/quick-calendar.svg";
 import QuickRemindersIcon from "@/src/assets/icons/quick-reminders.svg";
 import QuickShareIcon from "@/src/assets/icons/quick-share.svg";
 
-interface QuickAction {
+interface QuickActionCardProps {
   Icon: React.FC<React.SVGProps<SVGElement>>;
+  disabled?: boolean;
   title: string;
   description: string;
   onClick?: () => void;
 }
 
+function QuickActionCard({
+  Icon,
+  disabled = false,
+  title,
+  description,
+  onClick,
+}: QuickActionCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex flex-col items-start gap-2 rounded-xl border border-border p-3 text-left transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white"
+      aria-label={title}
+    >
+      <Icon className="w-7 h-7 shrink-0" />
+      <div>
+        <p className="text-[12.5px] font-bold text-text-dark leading-snug">
+          {title}
+        </p>
+        <p className="text-[10px] text-text-muted leading-snug mt-0.5">
+          {description}
+        </p>
+      </div>
+    </button>
+  );
+}
+
 interface SettingsTabProps {
   autoReminders?: boolean;
   closesDate?: string;
+  isExportingCsv?: boolean;
   isSaving?: boolean;
   isSendingReminders?: boolean;
+  onExportCsv?: () => void | Promise<void>;
   onSave?: (input: {
     autoReminders: boolean;
     deadline: string;
@@ -33,8 +64,10 @@ interface SettingsTabProps {
 export default function SettingsTab({
   autoReminders = true,
   closesDate = "Feb 28, 2026",
+  isExportingCsv = false,
   isSaving = false,
   isSendingReminders = false,
+  onExportCsv,
   onSave,
   onSendReminders,
   paused = false,
@@ -46,6 +79,7 @@ export default function SettingsTab({
   const [amountPerPerson, setAmountPerPerson] = useState(perPersonAmount);
   const [remindersEnabled, setRemindersEnabled] = useState(autoReminders);
   const [copied, setCopied] = useState(false);
+  const deadlineInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setDeadline(closesDate);
@@ -73,30 +107,15 @@ export default function SettingsTab({
     }
   };
 
-  const quickActions: QuickAction[] = [
-    {
-      Icon: QuickExportIcon,
-      title: "Export CSV",
-      description: "Download full payment report",
-    },
-    {
-      Icon: QuickRemindersIcon,
-      title: "Send Reminders",
-      description: "Nudge all unpaid members",
-      onClick: onSendReminders,
-    },
-    {
-      Icon: QuickCalendarIcon,
-      title: "Extend Deadline",
-      description: "Edit the date below, then save",
-    },
-    {
-      Icon: QuickShareIcon,
-      title: copied ? "Copied!" : "Share Link",
-      description: poolLink ?? "Copy & share pool link",
-      onClick: handleCopyLink,
-    },
-  ];
+  const handleDeadlineAction = () => {
+    const deadlineInput =
+      deadlineInputRef.current as
+        | (HTMLInputElement & { showPicker?: () => void })
+        | null;
+
+    deadlineInput?.focus();
+    deadlineInput?.showPicker?.();
+  };
 
   return (
     <div className="flex flex-col gap-4 p-5 xl:flex-row">
@@ -106,24 +125,33 @@ export default function SettingsTab({
           ⚡ Quick Actions
         </h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {quickActions.map((action, i) => (
-            <button
-              key={i}
-              onClick={action.onClick}
-              className="flex flex-col items-start gap-2 border border-border rounded-xl p-3 hover:bg-gray-50 transition-colors text-left"
-              aria-label={action.title}
-            >
-              <action.Icon className="w-7 h-7 shrink-0" />
-              <div>
-                <p className="text-[12.5px] font-bold text-text-dark leading-snug">
-                  {action.title}
-                </p>
-                <p className="text-[10px] text-text-muted leading-snug mt-0.5">
-                  {action.description}
-                </p>
-              </div>
-            </button>
-          ))}
+          <QuickActionCard
+            Icon={QuickExportIcon}
+            title={isExportingCsv ? "Exporting..." : "Export CSV"}
+            description="Download full payment report"
+            disabled={isExportingCsv || !onExportCsv}
+            onClick={() => void onExportCsv?.()}
+          />
+          <QuickActionCard
+            Icon={QuickRemindersIcon}
+            title={isSendingReminders ? "Sending..." : "Send Reminders"}
+            description="Nudge all unpaid members"
+            disabled={isSendingReminders || !onSendReminders}
+            onClick={() => void onSendReminders?.()}
+          />
+          <QuickActionCard
+            Icon={QuickCalendarIcon}
+            title="Extend Deadline"
+            description="Edit the date below, then save"
+            onClick={handleDeadlineAction}
+          />
+          <QuickActionCard
+            Icon={QuickShareIcon}
+            title={copied ? "Copied!" : "Share Link"}
+            description={poolLink ?? "Copy & share pool link"}
+            disabled={!poolLink}
+            onClick={handleCopyLink}
+          />
         </div>
       </div>
 
@@ -158,6 +186,7 @@ export default function SettingsTab({
             <label className="flex flex-col gap-2 text-[12.5px] font-bold text-text-dark">
               Deadline
               <input
+                ref={deadlineInputRef}
                 type="date"
                 value={deadline}
                 onChange={(event) => setDeadline(event.target.value)}

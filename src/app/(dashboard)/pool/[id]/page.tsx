@@ -60,6 +60,7 @@ export default function PoolDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [isExportingCsv, setIsExportingCsv] = useState(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [isSendingReminders, setIsSendingReminders] = useState(false);
   const [actionPending, setActionPending] = useState<
@@ -267,6 +268,50 @@ export default function PoolDashboardPage() {
     }
   };
 
+  const handleExportCsv = async () => {
+    setErrorMessage("");
+    setSuccessMessage("");
+    setIsExportingCsv(true);
+
+    try {
+      const response = await fetch(`/api/pools/${poolId}/export`, {
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as
+          | { message?: string }
+          | null;
+        setErrorMessage(payload?.message ?? "We couldn't export the CSV yet.");
+        return;
+      }
+
+      const csvBlob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(csvBlob);
+      const disposition = response.headers.get("content-disposition");
+      const filenameMatch = disposition?.match(/filename="?([^"]+)"?/i);
+      const fallbackName =
+        `${(pool?.title ?? "pool")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "pool"}-payment-report.csv`;
+      const filename = filenameMatch?.[1] ?? fallbackName;
+      const anchor = document.createElement("a");
+
+      anchor.href = downloadUrl;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+      setSuccessMessage("CSV report downloaded.");
+    } catch {
+      setErrorMessage("We couldn't export the CSV yet.");
+    } finally {
+      setIsExportingCsv(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-border bg-white px-5 py-8 text-sm text-text-muted">
@@ -314,10 +359,12 @@ export default function PoolDashboardPage() {
           </button>
           <button
             type="button"
-            className="flex items-center gap-2 bg-text-dark text-white px-5 py-2.5 rounded-full text-[13px] font-bold hover:opacity-90 transition-opacity"
+            onClick={() => void handleExportCsv()}
+            disabled={isExportingCsv}
+            className="flex items-center gap-2 rounded-full bg-text-dark px-5 py-2.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <DownloadIcon className="w-5 h-5" />
-            Export CSV
+            {isExportingCsv ? "Exporting..." : "Export CSV"}
           </button>
         </div>
       </header>
@@ -364,9 +411,11 @@ export default function PoolDashboardPage() {
           closesDate={pool.closesDate}
           deadlineValue={pool.settings.deadline}
           isCompleted={pool.isCompleted}
+          isExportingCsv={isExportingCsv}
           isSavingSettings={isSavingSettings}
           isSendingReminders={isSendingReminders}
           members={pool.members}
+          onExportCsv={handleExportCsv}
           onPoolAction={handlePoolAction}
           onSaveSettings={handleSaveSettings}
           onSendReminders={handleSendReminders}
