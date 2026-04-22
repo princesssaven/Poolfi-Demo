@@ -5,9 +5,11 @@ import {
   poolActivities,
   poolMembers,
   pools,
+  users,
   type DatabasePool,
   type DatabasePoolMember,
 } from "@/src/lib/db/schema";
+import { getExchangeRate } from "@/src/lib/busha/client";
 
 interface CreatePoolInput {
   autoClose: boolean;
@@ -68,8 +70,11 @@ function slugifyPoolName(value: string) {
 }
 
 function formatCurrency(amount: number) {
-  return `₦${amount.toLocaleString("en-NG")}`;
+  return `₦${amount.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
+
+// Fallback exchange rate for USDC to NGN if Busha API fails or is not configured
+const FALLBACK_USDC_TO_NGN_RATE = 1500;
 
 function formatDate(value: Date) {
   return value.toLocaleDateString("en-GB", {
@@ -349,6 +354,20 @@ export async function getHomeDashboardData(userId: string) {
     : [];
   const recentNotifications = await getNotificationsForUser(userId);
 
+  const [userRecord, liveRate] = await Promise.all([
+    getDb()
+      .select({ walletBalance: users.walletBalance })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1)
+      .then(res => res[0]),
+    getExchangeRate("USDC", "NGN")
+  ]);
+
+  const currentRate = liveRate ?? FALLBACK_USDC_TO_NGN_RATE;
+  const rawWalletBalance = parseFloat(userRecord?.walletBalance ?? "0");
+  const walletBalanceNgn = rawWalletBalance * currentRate;
+
   const poolSummaries = ownedPools.map((pool, index) => {
     const members = allMembers[index] ?? [];
     const metrics = getPoolMetrics(pool, members);
@@ -382,13 +401,16 @@ export async function getHomeDashboardData(userId: string) {
     return total + getPoolMetrics(pool, allMembers[index] ?? []).raised;
   }, 0);
 
-  const available = ownedPools.reduce((total, pool, index) => {
+  let available = ownedPools.reduce((total, pool, index) => {
     if (pool.status !== "completed") {
       return total;
     }
 
     return total + getPoolMetrics(pool, allMembers[index] ?? []).raised;
   }, 0);
+
+  // Add the user's converted USDC wallet balance to the available NGN balance
+  available += walletBalanceNgn;
 
   return {
     activities: recentNotifications.slice(0, 6).map((notification) => ({
