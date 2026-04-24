@@ -14,10 +14,11 @@ import { processIncomingPayments } from "@/src/lib/stellar/listener";
 export async function POST(request: NextRequest) {
   // Verify the request is authorized
   const authHeader = request.headers.get("authorization");
+  const querySecret = request.nextUrl.searchParams.get("secret");
   const cronSecret = process.env.CRON_SECRET;
 
-  // Allow if CRON_SECRET is not set (dev mode) or if it matches
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Allow if CRON_SECRET is not set (dev mode) or if it matches auth header or query param
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}` && querySecret !== cronSecret) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
