@@ -19,9 +19,16 @@ export default function PoolLiveSuccess({
 }: PoolLiveSuccessProps) {
   const [copied, setCopied] = useState(false);
 
+  const getFullUrl = () => {
+    if (typeof window !== "undefined") {
+      return `${window.location.origin}${poolLink}`;
+    }
+    return poolLink;
+  };
+
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(`https://${poolLink}`);
+      await navigator.clipboard.writeText(getFullUrl());
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -30,7 +37,7 @@ export default function PoolLiveSuccess({
   };
 
   const handleWhatsappShare = () => {
-    const message = `Join my pool on PoolFi: https://${poolLink}`;
+    const message = `Join my pool on PoolFi: ${getFullUrl()}`;
     window.open(
       `https://wa.me/?text=${encodeURIComponent(message)}`,
       "_blank",
@@ -63,7 +70,7 @@ export default function PoolLiveSuccess({
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="min-w-0 flex-1 px-4 py-4 text-center sm:px-8 sm:py-6">
               <span className="block truncate font-heading text-[20px] font-bold tracking-[-0.4px] text-text-dark sm:text-[26px]">
-                {poolLink}
+                {getFullUrl()}
               </span>
             </div>
             <button

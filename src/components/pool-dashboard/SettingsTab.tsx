@@ -99,7 +99,8 @@ export default function SettingsTab({
     }
 
     try {
-      await navigator.clipboard.writeText(`https://${poolLink}`);
+      const fullUrl = `${window.location.origin}${poolLink}`;
+      await navigator.clipboard.writeText(fullUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {

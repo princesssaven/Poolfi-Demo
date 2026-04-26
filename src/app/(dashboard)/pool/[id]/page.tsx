@@ -261,7 +261,8 @@ export default function PoolDashboardPage() {
     }
 
     try {
-      await navigator.clipboard.writeText(`https://${pool.poolLink}`);
+      const fullUrl = `${window.location.origin}${pool.poolLink}`;
+      await navigator.clipboard.writeText(fullUrl);
       setSuccessMessage("Pool link copied.");
     } catch {
       setErrorMessage("We couldn't copy the pool link from this browser.");
