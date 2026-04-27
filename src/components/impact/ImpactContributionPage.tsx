@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Toggle from "@/src/components/ui/Toggle";
+import AddMoneyModal from "@/src/components/create-pool/AddMoneyModal";
 
 interface BudgetItem {
   label: string;
@@ -250,6 +251,7 @@ function truncateSentence(message: string) {
 export default function ImpactContributionPage() {
   const [selectedAmount, setSelectedAmount] = useState(1000);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isAddMoneyModalOpen, setIsAddMoneyModalOpen] = useState(false);
   const [impactDetails, setImpactDetails] = useState<ImpactContributionDetails | null>(null);
   const [isLoadingPool, setIsLoadingPool] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -778,6 +780,7 @@ export default function ImpactContributionPage() {
 
               <button
                 type="button"
+                onClick={() => setIsAddMoneyModalOpen(true)}
                 className="w-full rounded-[16px] bg-success px-5 py-4 font-heading text-[18px] font-bold text-white transition-colors hover:opacity-95"
               >
                 Contribute {formatCurrency(selectedAmount)} →
@@ -850,6 +853,11 @@ export default function ImpactContributionPage() {
           </Link>
         </aside>
       </div>
+
+      <AddMoneyModal 
+        isOpen={isAddMoneyModalOpen} 
+        onClose={() => setIsAddMoneyModalOpen(false)} 
+      />
     </div>
   );
 }
