@@ -30,6 +30,7 @@ export default function AddMembersStep({
 }: AddMembersStepProps) {
   const [showCustomField, setShowCustomField] = useState(false);
   const [customLabel, setCustomLabel] = useState("");
+  const [showError, setShowError] = useState(false);
   const [newMember, setNewMember] = useState({
     name: "",
     phone: "",
@@ -55,7 +56,6 @@ export default function AddMembersStep({
           return { name: name || "", phone: phone || "", custom: custom || "" };
         });
       } else {
-        // Excel parsing
         const workbook = XLSX.read(result, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
@@ -72,7 +72,6 @@ export default function AddMembersStep({
 
       const filteredMembers = parsedMembers.filter((m) => {
         const n = m.name.toLowerCase();
-        // Skip common headers
         return (
           n !== "name" &&
           n !== "full name" &&
@@ -86,7 +85,6 @@ export default function AddMembersStep({
 
       if (filteredMembers.length > 0) {
         onChange({ ...data, members: [...data.members, ...filteredMembers] });
-        // Optional: show a temporary success state
         setUploadSuccess(filteredMembers.length);
         setTimeout(() => setUploadSuccess(0), 3000);
       }
@@ -109,6 +107,7 @@ export default function AddMembersStep({
       });
       setCustomLabel("");
       setShowCustomField(false);
+      setShowError(false);
     }
   };
 
@@ -121,20 +120,27 @@ export default function AddMembersStep({
 
   const toggleIdentityField = (field: string) => {
     const isSelected = data.identityFields.includes(field);
-
     onChange({
       ...data,
       identityFields: isSelected
         ? data.identityFields.filter((selectedField) => selectedField !== field)
         : [...data.identityFields, field],
     });
+    setShowError(false);
   };
 
   const allFields = [...data.identityFields, ...data.customFields];
 
+  const handleNext = () => {
+    if (allFields.length === 0) {
+      setShowError(true);
+      return;
+    }
+    onNext();
+  };
+
   return (
     <div className="rounded-[20px] border border-border bg-white overflow-hidden">
-      {/* Header */}
       <div className="flex items-start gap-3.5 p-5 pb-5 sm:p-7 sm:pb-5">
         <RulesGearIcon className="w-6 h-6 text-primary shrink-0 mt-0.5" />
         <div>
@@ -142,15 +148,12 @@ export default function AddMembersStep({
             Add your members
           </h2>
           <p className="text-[13px] text-text-muted font-card mt-1">
-            Pre-loading members means no one can dodge every slot is named and
-            tracked..
+            Pre-loading members means no one can dodge every slot is named and tracked.
           </p>
         </div>
       </div>
 
-      {/* Form */}
       <div className="flex flex-col gap-5 px-5 pb-5 sm:px-7">
-        {/* Required Identity Fields */}
         <div className="flex flex-col gap-2.5">
           <h3 className="text-base font-bold text-text-dark font-card">
             Required Identity Fields
@@ -158,13 +161,11 @@ export default function AddMembersStep({
           <div className="flex gap-2.5 flex-wrap">
             {identityFieldOptions.map((field) => {
               const isSelected = data.identityFields.includes(field);
-
               return (
                 <button
                   key={field}
                   type="button"
                   onClick={() => toggleIdentityField(field)}
-                  aria-pressed={isSelected}
                   className={`border rounded-[10px] px-4 py-2 text-[13px] font-semibold font-card transition-all ${
                     isSelected
                       ? "border-primary bg-primary text-white shadow-[0_8px_18px_rgba(27,79,216,0.2)]"
@@ -185,17 +186,16 @@ export default function AddMembersStep({
                     customFields: data.customFields.filter((f) => f !== field),
                   });
                 }}
-                className="border border-primary bg-primary text-white rounded-[10px] px-4 py-2 text-[13px] font-semibold font-card shadow-[0_8px_18px_rgba(27,79,216,0.2)] hover:bg-primary-dark transition-colors"
+                className="border border-primary bg-primary text-white rounded-[10px] px-4 py-2 text-[13px] font-semibold font-card shadow-[0_8px_18px_rgba(27,79,216,0.2)] transition-colors"
               >
                 {field}
               </button>
             ))}
           </div>
 
-          {/* Add Custom Field button */}
           <button
             onClick={() => setShowCustomField(true)}
-            className="flex items-center gap-2.5 border border-dashed border-gray-300 rounded-xl px-4 py-3.5 hover:border-primary transition-colors"
+            className="flex items-center gap-2.5 border border-dashed border-gray-300 rounded-xl px-4 py-3.5 hover:border-primary transition-colors mt-2"
           >
             <PlusBlueIcon className="w-[18px] h-[18px] text-primary" />
             <span className="font-heading text-[11px] font-bold text-primary">
@@ -203,9 +203,8 @@ export default function AddMembersStep({
             </span>
           </button>
 
-          {/* Custom field label input */}
           {showCustomField && (
-            <div className="flex flex-col gap-[7px]">
+            <div className="flex flex-col gap-[7px] mt-2">
               <label className="text-[13px] font-semibold text-text-dark font-card">
                 Custom field label
               </label>
@@ -214,8 +213,8 @@ export default function AddMembersStep({
                   type="text"
                   value={customLabel}
                   onChange={(e) => setCustomLabel(e.target.value)}
-                  placeholder="Table ID"
-                  className="flex-1 border border-border rounded-[10px] px-4 py-3 text-sm font-card text-text-dark placeholder:text-gray-300 focus:outline-none focus:border-primary"
+                  placeholder="e.g. Table ID"
+                  className="flex-1 border border-border rounded-[10px] px-4 py-3 text-sm font-card text-text-dark focus:outline-none focus:border-primary"
                   onKeyDown={(e) => e.key === "Enter" && addCustomField()}
                 />
                 <button
@@ -228,19 +227,22 @@ export default function AddMembersStep({
             </div>
           )}
 
-          <p className="text-sm text-gray-300 font-card">
-            Choose what contributors must provide. These appear on your CSV
-            report. Select from presets or add custom fields.
+          {showError && (
+            <p className="text-[11px] font-bold text-danger animate-pulse mt-1">
+              ⚠️ Choose at least one identity field to continue.
+            </p>
+          )}
+
+          <p className="text-sm text-gray-300 font-card mt-1">
+            Choose what contributors must provide. Preset examples or custom fields.
           </p>
         </div>
 
-        {/* Pre-load members */}
         <div className="flex flex-col gap-2.5">
           <h3 className="text-base font-bold text-text-dark font-card">
             Pre-load members
           </h3>
 
-          {/* CSV Upload area */}
           <div
             onClick={() => fileInputRef.current?.click()}
             className={`flex flex-col items-center gap-2 rounded-xl border border-dashed p-6 sm:p-8 cursor-pointer transition-all bg-white ${
@@ -259,19 +261,8 @@ export default function AddMembersStep({
             {uploadSuccess > 0 ? (
               <>
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald text-white">
-                  <svg
-                    width="20"
-                    height="20"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5 13l4 4L19 7"
-                    />
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <p className="text-base font-bold text-emerald font-card">
@@ -287,13 +278,10 @@ export default function AddMembersStep({
               </>
             )}
             <p className="text-[13px] font-semibold font-card text-text-dark">
-              {allFields.length > 0
-                ? allFields.join(", ")
-                : "No fields selected yet"}
+              {allFields.length > 0 ? allFields.join(", ") : "No fields selected yet"}
             </p>
           </div>
 
-          {/* Or add manually */}
           <p className="text-[13px] font-semibold text-text-dark font-card mt-2">
             Or add Manually
           </p>
@@ -301,18 +289,14 @@ export default function AddMembersStep({
             <input
               type="text"
               value={newMember.name}
-              onChange={(e) =>
-                setNewMember({ ...newMember, name: e.target.value })
-              }
+              onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
               placeholder="Name"
               className="flex-1 border border-border rounded-[10px] px-4 py-3 text-sm font-card text-text-dark placeholder:text-gray-300 focus:outline-none focus:border-primary"
             />
             <input
               type="text"
               value={newMember.phone}
-              onChange={(e) =>
-                setNewMember({ ...newMember, phone: e.target.value })
-              }
+              onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
               placeholder="Phone Number"
               className="flex-1 border border-border rounded-[10px] px-4 py-3 text-sm font-card text-text-dark placeholder:text-gray-300 focus:outline-none focus:border-primary"
             />
@@ -323,35 +307,27 @@ export default function AddMembersStep({
                 key={field}
                 type="text"
                 value={newMember.custom}
-                onChange={(e) =>
-                  setNewMember({ ...newMember, custom: e.target.value })
-                }
+                onChange={(e) => setNewMember({ ...newMember, custom: e.target.value })}
                 placeholder={field}
                 className="flex-1 border border-border rounded-[10px] px-4 py-3 text-sm font-card text-text-dark placeholder:text-gray-300 focus:outline-none focus:border-primary"
               />
             ))}
             <button
               onClick={addMember}
-              className="flex items-center justify-center gap-2 rounded-[10px] border border-border px-6 py-3 text-sm font-card text-text-dark transition-colors hover:bg-gray-50"
+              className="flex items-center justify-center gap-2 rounded-[10px] border border-border px-6 py-3 text-sm font-card text-text-dark hover:bg-gray-50"
             >
               <PlusOutlineBlueIcon className="w-3.5 h-3.5 text-primary" />
               Add
             </button>
           </div>
 
-          {/* Added members list */}
           {data.members.length > 0 && (
-            <div className="mt-2 flex flex-col gap-1">
+            <div className="mt-2 flex flex-col gap-1 max-h-[150px] overflow-y-auto">
               {data.members.map((m, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 px-4 py-2 bg-bg-page rounded-lg text-sm font-card"
-                >
+                <div key={i} className="flex items-center gap-3 px-4 py-2 bg-bg-page rounded-lg text-sm font-card">
                   <span className="text-text-dark font-bold">{m.name}</span>
                   <span className="text-text-muted">{m.phone}</span>
-                  {m.custom && (
-                    <span className="text-text-muted">{m.custom}</span>
-                  )}
+                  {m.custom && <span className="text-text-muted">{m.custom}</span>}
                 </div>
               ))}
             </div>
@@ -359,7 +335,6 @@ export default function AddMembersStep({
         </div>
       </div>
 
-      {/* Footer */}
       <div className="flex flex-col gap-3 border-t border-border px-5 py-5 sm:flex-row sm:px-7">
         <button
           onClick={onBack}
@@ -368,8 +343,12 @@ export default function AddMembersStep({
           ← Back
         </button>
         <button
-          onClick={onNext}
-          className="flex-1 bg-primary text-white text-sm font-semibold font-card py-3 rounded-full hover:bg-primary-dark transition-colors"
+          onClick={handleNext}
+          className={`flex-1 text-sm font-semibold font-card py-3 rounded-full transition-all ${
+            allFields.length === 0
+              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+              : "bg-primary text-white hover:bg-primary-dark shadow-[0_8px_18px_rgba(27,79,216,0.15)]"
+          }`}
         >
           Review Pool →
         </button>
