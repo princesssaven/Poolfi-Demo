@@ -250,12 +250,65 @@ function truncateSentence(message: string) {
 
 export default function ImpactContributionPage() {
   const [selectedAmount, setSelectedAmount] = useState(1000);
+  const [customAmountText, setCustomAmountText] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isAddMoneyModalOpen, setIsAddMoneyModalOpen] = useState(false);
   const [impactDetails, setImpactDetails] = useState<ImpactContributionDetails | null>(null);
   const [isLoadingPool, setIsLoadingPool] = useState(true);
   const [loadError, setLoadError] = useState("");
 
+  // Wallet balance state
+  const [walletBalanceNgn, setWalletBalanceNgn] = useState<number | null>(null);
+  const [depositMemo, setDepositMemo] = useState("");
+
+  // Contribution flow state
+  const [isContributing, setIsContributing] = useState(false);
+  const [contributeSuccess, setContributeSuccess] = useState(false);
+  const [contributeError, setContributeError] = useState("");
+  const [insufficientBalance, setInsufficientBalance] = useState(false);
+
+  // Fetch wallet balance
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadBalance = async () => {
+      try {
+        const response = await fetch("/api/dashboard/home", { cache: "no-store" });
+        const payload = (await response.json().catch(() => null)) as
+          | { data?: { balance?: { available?: number } }; message?: string }
+          | null;
+
+        if (!isMounted) return;
+
+        if (response.ok && payload?.data?.balance) {
+          setWalletBalanceNgn(payload.data.balance.available ?? 0);
+        }
+      } catch {
+        // Balance will show as loading
+      }
+    };
+
+    const loadMemo = async () => {
+      try {
+        const response = await fetch("/api/auth/state", { cache: "no-store" });
+        const payload = (await response.json().catch(() => null)) as
+          | { user?: { depositMemo?: string } | null }
+          | null;
+
+        if (!isMounted) return;
+        setDepositMemo(payload?.user?.depositMemo ?? "");
+      } catch {
+        // Memo not critical
+      }
+    };
+
+    void loadBalance();
+    void loadMemo();
+
+    return () => { isMounted = false; };
+  }, []);
+
+  // Fetch impact pool
   useEffect(() => {
     let isMounted = true;
 
@@ -725,13 +778,19 @@ export default function ImpactContributionPage() {
             <div className="space-y-4 p-5 sm:p-6">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {contributionOptions.map((amount) => {
-                  const isActive = selectedAmount === amount;
+                  const isActive = selectedAmount === amount && customAmountText === "";
 
                   return (
                     <button
                       key={amount}
                       type="button"
-                      onClick={() => setSelectedAmount(amount)}
+                      onClick={() => {
+                        setSelectedAmount(amount);
+                        setCustomAmountText("");
+                        setContributeError("");
+                        setInsufficientBalance(false);
+                        setContributeSuccess(false);
+                      }}
                       className={`rounded-[14px] border px-4 py-3 text-[16px] font-bold transition-colors ${
                         isActive
                           ? "border-success bg-success-bg text-success"
@@ -744,14 +803,27 @@ export default function ImpactContributionPage() {
                 })}
               </div>
 
-              <div className="flex items-center overflow-hidden rounded-[14px] border border-border bg-[#fbfcfe]">
+              <div className={`flex items-center overflow-hidden rounded-[14px] border bg-[#fbfcfe] ${
+                customAmountText ? "border-success" : "border-border"
+              }`}>
                 <span className="flex h-12 w-12 items-center justify-center border-r border-border bg-[#f4f6fa] text-[15px] font-bold text-text-muted">
                   ₦
                 </span>
                 <input
                   type="text"
-                  value=""
-                  readOnly
+                  inputMode="numeric"
+                  value={customAmountText}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^0-9]/g, "");
+                    setCustomAmountText(raw);
+                    const parsed = parseInt(raw, 10);
+                    if (!isNaN(parsed) && parsed > 0) {
+                      setSelectedAmount(parsed);
+                    }
+                    setContributeError("");
+                    setInsufficientBalance(false);
+                    setContributeSuccess(false);
+                  }}
                   placeholder="Custom amount"
                   className="w-full bg-transparent px-4 py-3 text-[18px] font-bold text-text-dark outline-none placeholder:text-[#c4c9d4]"
                 />
@@ -775,15 +847,121 @@ export default function ImpactContributionPage() {
 
               <div className="flex items-center justify-between rounded-[14px] bg-[#f7f9fc] px-4 py-3">
                 <span className="text-[14px] text-text-muted">Your PoolFi Balance</span>
-                <span className="text-[16px] font-bold text-success">₦31,500.00</span>
+                <span className={`text-[16px] font-bold ${
+                  walletBalanceNgn !== null && walletBalanceNgn < selectedAmount
+                    ? "text-danger"
+                    : "text-success"
+                }`}>
+                  {walletBalanceNgn !== null
+                    ? `₦${walletBalanceNgn.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    : "Loading…"}
+                </span>
               </div>
+
+              {/* Success banner */}
+              {contributeSuccess && (
+                <div className="flex items-center gap-3 rounded-[14px] border border-success/20 bg-success-bg px-4 py-3">
+                  <span className="text-[20px]">✅</span>
+                  <div>
+                    <p className="font-heading text-[15px] font-bold text-success">Contribution successful!</p>
+                    <p className="text-[13px] text-text-muted">Your funds have been applied to this pool.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error / Insufficient balance message */}
+              {contributeError && (
+                <div className="rounded-[14px] border border-danger/20 bg-danger/5 px-4 py-3">
+                  <p className="text-[14px] font-medium text-danger">{contributeError}</p>
+                  {insufficientBalance && (
+                    <button
+                      type="button"
+                      onClick={() => setIsAddMoneyModalOpen(true)}
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[13px] font-bold text-white transition-colors hover:opacity-90"
+                    >
+                      + Add Funds
+                    </button>
+                  )}
+                </div>
+              )}
 
               <button
                 type="button"
-                onClick={() => setIsAddMoneyModalOpen(true)}
-                className="w-full rounded-[16px] bg-success px-5 py-4 font-heading text-[18px] font-bold text-white transition-colors hover:opacity-95"
+                disabled={isContributing || contributeSuccess}
+                onClick={async () => {
+                  if (!impactPool) return;
+
+                  // Client-side balance check
+                  if (walletBalanceNgn !== null && selectedAmount > walletBalanceNgn) {
+                    setContributeError("Insufficient balance. Please add funds to your wallet first.");
+                    setInsufficientBalance(true);
+                    return;
+                  }
+
+                  setIsContributing(true);
+                  setContributeError("");
+                  setInsufficientBalance(false);
+
+                  try {
+                    const response = await fetch("/api/pools/contribute", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        poolId: impactPool.id,
+                        amountNgn: selectedAmount,
+                        anonymous: isAnonymous,
+                      }),
+                    });
+
+                    const payload = await response.json().catch(() => null);
+
+                    if (!response.ok) {
+                      const msg = payload?.message ?? "Something went wrong. Please try again.";
+                      setContributeError(msg);
+                      if (response.status === 422 && payload?.availableNgn !== undefined) {
+                        setInsufficientBalance(true);
+                      }
+                      return;
+                    }
+
+                    // Update balance locally
+                    if (payload?.data?.newBalanceNgn !== undefined) {
+                      setWalletBalanceNgn(payload.data.newBalanceNgn);
+                    }
+
+                    setContributeSuccess(true);
+
+                    // Refresh pool data after a short delay
+                    setTimeout(async () => {
+                      try {
+                        const poolRes = await fetch("/api/pools/impact/latest", { cache: "no-store" });
+                        const poolPayload = await poolRes.json().catch(() => null);
+                        if (poolRes.ok && poolPayload?.data) {
+                          setImpactDetails(poolPayload.data);
+                        }
+                      } catch {
+                        // Silent refresh failure
+                      }
+                    }, 500);
+                  } catch {
+                    setContributeError("Network error. Please check your connection and try again.");
+                  } finally {
+                    setIsContributing(false);
+                  }
+                }}
+                className={`w-full rounded-[16px] px-5 py-4 font-heading text-[18px] font-bold text-white transition-all ${
+                  contributeSuccess
+                    ? "bg-success/60 cursor-default"
+                    : isContributing
+                      ? "bg-success/80 cursor-wait"
+                      : "bg-success hover:opacity-95"
+                }`}
               >
-                Contribute {formatCurrency(selectedAmount)} →
+                {isContributing
+                  ? "Processing…"
+                  : contributeSuccess
+                    ? "✓ Contributed!"
+                    : `Contribute ${formatCurrency(selectedAmount)} →`}
               </button>
 
               <p className="text-center text-[13px] text-text-muted">
@@ -856,7 +1034,8 @@ export default function ImpactContributionPage() {
 
       <AddMoneyModal 
         isOpen={isAddMoneyModalOpen} 
-        onClose={() => setIsAddMoneyModalOpen(false)} 
+        onClose={() => setIsAddMoneyModalOpen(false)}
+        depositMemo={depositMemo}
       />
     </div>
   );

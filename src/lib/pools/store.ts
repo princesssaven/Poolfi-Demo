@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { getDb } from "@/src/lib/db";
 import {
   notifications,
@@ -770,6 +770,129 @@ export async function updatePoolStatus(
   ]);
 
   return updatedPool;
+}
+
+export async function contributeToPool(input: {
+  userId: string;
+  userName: string;
+  poolId: string;
+  amountNgn: number;
+  anonymous: boolean;
+}) {
+  const db = getDb();
+
+  // 1. Look up the pool
+  const [pool] = await db
+    .select()
+    .from(pools)
+    .where(eq(pools.id, input.poolId))
+    .limit(1);
+
+  if (!pool) {
+    return { success: false, error: "Pool not found." } as const;
+  }
+
+  if (pool.status !== "active") {
+    return { success: false, error: "This pool is no longer accepting contributions." } as const;
+  }
+
+  if (pool.paused) {
+    return { success: false, error: "Contributions to this pool are currently paused." } as const;
+  }
+
+  // 2. Get exchange rate and user balance
+  const [liveRate, userRecord] = await Promise.all([
+    getExchangeRate("USDC", "NGN"),
+    db
+      .select({ walletBalance: users.walletBalance })
+      .from(users)
+      .where(eq(users.id, input.userId))
+      .limit(1)
+      .then((res) => res[0]),
+  ]);
+
+  if (!userRecord) {
+    return { success: false, error: "User not found." } as const;
+  }
+
+  const currentRate = liveRate ?? FALLBACK_USDC_TO_NGN_RATE;
+  const rawWalletUsdc = parseFloat(userRecord.walletBalance);
+  const walletBalanceNgn = rawWalletUsdc * currentRate;
+
+  if (input.amountNgn <= 0) {
+    return { success: false, error: "Contribution amount must be greater than zero." } as const;
+  }
+
+  if (input.amountNgn > walletBalanceNgn) {
+    return {
+      success: false,
+      error: "Insufficient balance. Please add funds to your wallet first.",
+      availableNgn: walletBalanceNgn,
+    } as const;
+  }
+
+  // 3. Convert NGN to USDC for the wallet deduction
+  const usdcToDeduct = (input.amountNgn / currentRate).toFixed(7);
+
+  // 4. Deduct wallet balance
+  await db
+    .update(users)
+    .set({
+      walletBalance: sql`${users.walletBalance}::numeric - ${usdcToDeduct}::numeric`,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, input.userId));
+
+  // 5. Add contributor as a paid pool member
+  const displayName = input.anonymous ? "Anonymous Contributor" : input.userName;
+
+  await db.insert(poolMembers).values({
+    poolId: input.poolId,
+    name: displayName,
+    phone: "",
+    customFieldValue: input.anonymous ? "" : input.userId,
+    status: "paid",
+    paidAt: new Date(),
+  });
+
+  // 6. Log activity + notification
+  const contributionLabel = formatCurrency(input.amountNgn);
+
+  await Promise.all([
+    createPoolActivity({
+      actorUserId: input.userId,
+      kind: "member_paid",
+      message: `${displayName} contributed ${contributionLabel}`,
+      meta: {
+        amountNgn: input.amountNgn,
+        anonymous: input.anonymous,
+      },
+      poolId: input.poolId,
+    }),
+    createNotification({
+      body: `You contributed ${contributionLabel} to ${pool.name}. Thank you for your support!`,
+      kind: "contribution_made",
+      linkHref: `/impact-contribution`,
+      poolId: input.poolId,
+      title: "Contribution successful",
+      userId: input.userId,
+    }),
+  ]);
+
+  // 7. Return updated balance
+  const [updatedUser] = await db
+    .select({ walletBalance: users.walletBalance })
+    .from(users)
+    .where(eq(users.id, input.userId))
+    .limit(1);
+
+  const updatedBalanceNgn = parseFloat(updatedUser?.walletBalance ?? "0") * currentRate;
+
+  return {
+    success: true,
+    newBalanceNgn: updatedBalanceNgn,
+    contributedNgn: input.amountNgn,
+  } as const;
 }
 
 export async function getPublicPoolBySlug(slug: string) {
