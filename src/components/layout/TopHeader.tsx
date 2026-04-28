@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import NotificationIcon from "@/src/assets/icons/notification.svg";
 import SettingsIcon from "@/src/assets/icons/settings.svg";
 import DownloadIcon from "@/src/assets/icons/download.svg";
@@ -39,6 +40,80 @@ export default function TopHeader({
     year: "numeric",
   });
   const greetingName = user?.firstName || user?.displayName || "there";
+  const [isExportingCsv, setIsExportingCsv] = useState(false);
+
+  const escapeCsvValue = (value: string | number | boolean | null | undefined) => {
+    const text = value == null ? "" : String(value);
+    return `"${text.replace(/"/g, '""')}"`;
+  };
+
+  const handleExportCsv = async () => {
+    setIsExportingCsv(true);
+
+    try {
+      const response = await fetch("/api/pools/mine", { cache: "no-store" });
+      const payload = (await response.json().catch(() => null)) as
+        | { data?: { pools?: Array<Record<string, unknown>> }; message?: string }
+        | null;
+
+      if (!response.ok || !payload?.data?.pools) {
+        window.alert(payload?.message ?? "We couldn't export your pools yet.");
+        return;
+      }
+
+      const pools = payload.data.pools as Array<{
+        title: string;
+        category: string;
+        status: string;
+        raised: number;
+        target: number;
+        contribution?: string;
+        footer?: { left: string; right: string };
+      }>;
+
+      const rows = [
+        [
+          "Title",
+          "Category",
+          "Status",
+          "Raised",
+          "Target",
+          "Contribution",
+          "Footer Left",
+          "Footer Right",
+        ],
+        ...pools.map((pool) => [
+          pool.title,
+          pool.category,
+          pool.status,
+          pool.raised,
+          pool.target,
+          pool.contribution ?? "",
+          pool.footer?.left ?? "",
+          pool.footer?.right ?? "",
+        ]),
+      ];
+
+      const csv = `\uFEFF${rows
+        .map((row) => row.map(escapeCsvValue).join(","))
+        .join("\r\n")}`;
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = downloadUrl;
+      anchor.download = "my-pools.csv";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error(error);
+      window.alert("We couldn't export your pools yet.");
+    } finally {
+      setIsExportingCsv(false);
+    }
+  };
 
   void hideDefault;
 
@@ -91,9 +166,14 @@ export default function TopHeader({
         </Link>
 
         {isMyPools ? (
-          <button className="flex items-center gap-2 rounded-full bg-text-dark px-5 py-2.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90">
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            disabled={isExportingCsv}
+            className="flex items-center gap-2 rounded-full bg-text-dark px-5 py-2.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
             <DownloadIcon className="w-5 h-5" />
-            Export CSV
+            {isExportingCsv ? "Exporting..." : "Export CSV"}
           </button>
         ) : (
           <button

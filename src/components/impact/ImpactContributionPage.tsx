@@ -123,6 +123,37 @@ export default function ImpactContributionPage() {
   const [contributeSuccess, setContributeSuccess] = useState(false);
   const [contributeError, setContributeError] = useState("");
   const [insufficientBalance, setInsufficientBalance] = useState(false);
+  const [shareStatus, setShareStatus] = useState("");
+
+  const getPoolUrl = () => window.location.href;
+  const getShareMessage = () => {
+    const description = poolDescription ? `${poolDescription} ` : "";
+    return `Support ${poolTitle} on PoolFi! ${description}${getPoolUrl()}`;
+  };
+
+  const handleCopyPoolLink = async () => {
+    const url = getPoolUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareStatus("Pool link copied.");
+    } catch {
+      setShareStatus("Unable to copy the link. Please try again.");
+    }
+  };
+
+  const handleShareWhatsApp = () => {
+    const text = encodeURIComponent(getShareMessage());
+    window.open(`https://wa.me/?text=${text}`, "_blank");
+  };
+
+  const handleShareTwitter = () => {
+    const text = encodeURIComponent(`Support ${poolTitle} on PoolFi!`);
+    const url = encodeURIComponent(getPoolUrl());
+    window.open(
+      `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
+      "_blank"
+    );
+  };
 
   // Fetch wallet balance
   useEffect(() => {
@@ -836,19 +867,32 @@ export default function ImpactContributionPage() {
 
             <div className="mt-4 space-y-2.5">
               {[
-                "📱 Share on WhatsApp",
-                "🔗 Copy Pool Link",
-                "🐦 Share on Twitter",
+                {
+                  label: "📱 Share on WhatsApp",
+                  onClick: handleShareWhatsApp,
+                },
+                {
+                  label: "🔗 Copy Pool Link",
+                  onClick: handleCopyPoolLink,
+                },
+                {
+                  label: "🐦 Share on Twitter",
+                  onClick: handleShareTwitter,
+                },
               ].map((action) => (
                 <button
-                  key={action}
+                  key={action.label}
                   type="button"
+                  onClick={action.onClick}
                   className="flex w-full items-center rounded-[14px] border border-border px-4 py-3 text-left text-[15px] font-semibold text-text-dark transition-colors hover:bg-gray-50"
                 >
-                  {action}
+                  {action.label}
                 </button>
               ))}
             </div>
+            {shareStatus ? (
+              <p className="mt-3 text-sm text-text-muted">{shareStatus}</p>
+            ) : null}
           </section>
 
           <Link

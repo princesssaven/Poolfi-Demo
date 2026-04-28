@@ -21,7 +21,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "PoolFi — Community Pool Management",
+  title: "PoolFi",
   description: "Manage your community pools, contributions, and impact.",
 };
 
