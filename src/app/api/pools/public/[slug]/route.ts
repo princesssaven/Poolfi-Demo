@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isDatabaseConfigured } from "@/src/lib/db";
-import { getPublicPoolBySlug } from "@/src/lib/pools/store";
+import { getPublicPoolBySlug } from "@/src/lib/pools/public";
 
 export async function GET(
   _request: Request,
