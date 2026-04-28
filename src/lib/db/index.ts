@@ -11,6 +11,8 @@ function createDatabase() {
 
   const client = postgres(databaseUrl, {
     prepare: false,
+    max: 1,
+    idle_timeout: 20,
   });
 
   return drizzle({
