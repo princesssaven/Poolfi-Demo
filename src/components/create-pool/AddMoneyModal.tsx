@@ -17,7 +17,6 @@ export default function AddMoneyModal({
   onProcessed,
 }: AddMoneyModalProps) {
   const [selectedMethod, setSelectedMethod] = useState<"bank" | "card" | "usdc">("bank");
-  const [isCheckingPayments, setIsCheckingPayments] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const stellarAddress = process.env.NEXT_PUBLIC_STELLAR_RECEIVER_ADDRESS || "Not configured";
   const memoDisplay = depositMemo || "Loading...";
@@ -31,35 +30,6 @@ export default function AddMoneyModal({
     } catch {
       setStatusMessage(`We couldn't copy the ${label.toLowerCase()} from this browser.`);
     }
-  };
-
-  const checkIncomingPayments = async () => {
-    setIsCheckingPayments(true);
-    setStatusMessage("");
-
-    const response = await fetch("/api/stellar/process-payments", {
-      method: "POST",
-    });
-    const payload = (await response.json().catch(() => null)) as
-      | { errors?: string[]; message?: string; processed?: number; skipped?: number }
-      | null;
-
-    if (!response.ok) {
-      setStatusMessage(payload?.message ?? "We couldn't check incoming payments yet.");
-      setIsCheckingPayments(false);
-      return;
-    }
-
-    const processed = payload?.processed ?? 0;
-    const errors = payload?.errors ?? [];
-
-    setStatusMessage(
-      processed > 0
-        ? `${processed} payment${processed === 1 ? "" : "s"} credited to wallets.`
-        : errors[0] ?? "No new matching deposits found yet."
-    );
-    onProcessed?.();
-    setIsCheckingPayments(false);
   };
 
   return (
@@ -171,15 +141,6 @@ export default function AddMoneyModal({
                   {statusMessage}
                 </div>
               ) : null}
-
-              <button
-                type="button"
-                onClick={() => void checkIncomingPayments()}
-                disabled={isCheckingPayments}
-                className="w-full rounded-full bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isCheckingPayments ? "Checking deposits..." : "Check for Deposit"}
-              </button>
 
               <p className="font-card text-[11px] font-semibold uppercase leading-[15px] tracking-[1px] text-text-muted">
                 Send only USDC on the Stellar network to this address. Include your
