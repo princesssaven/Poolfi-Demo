@@ -8,7 +8,6 @@ import PoolBasicsStep from "@/src/components/create-pool/steps/PoolBasicsStep";
 import RulesFieldsStep from "@/src/components/create-pool/steps/RulesFieldsStep";
 import AddMembersStep from "@/src/components/create-pool/steps/AddMembersStep";
 import ReviewLaunchStep from "@/src/components/create-pool/steps/ReviewLaunchStep";
-import PoolLiveSuccess from "@/src/components/create-pool/PoolLiveSuccess";
 
 const steps = [
   { label: "Pool Basics", number: 1 },
@@ -28,10 +27,8 @@ function slugifyPoolName(value: string) {
 export default function CreatePoolPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
-  const [isPoolLiveOpen, setIsPoolLiveOpen] = useState(false);
   const [isLaunchingPool, setIsLaunchingPool] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [createdPoolLink, setCreatedPoolLink] = useState("");
 
   // Step 1 data
   const [basicsData, setBasicsData] = useState({
@@ -78,10 +75,6 @@ export default function CreatePoolPage() {
     }
   };
 
-  const poolNameForLink = basicsData.name || "300L Class Dues";
-  const poolSlug = slugifyPoolName(poolNameForLink) || "unilag-class-dues-2025";
-  const poolLink = `${poolSlug}-x7k9m`;
-
   const launchPool = async () => {
     setErrorMessage("");
     setIsLaunchingPool(true);
@@ -99,21 +92,21 @@ export default function CreatePoolPage() {
       }),
     });
 
-    const payload = (await response.json().catch(() => null)) as
-      | { message?: string; poolLink?: string }
-      | null;
+    const payload = await response.json().catch(() => null);
 
     if (!response.ok) {
-      setErrorMessage(
-        payload?.message ?? "We couldn't launch your pool right now. Try again."
-      );
+      setErrorMessage(payload?.message ?? "We couldn't launch your pool right now. Try again.");
       setIsLaunchingPool(false);
       return;
     }
 
-    setCreatedPoolLink(payload?.poolLink ?? poolLink);
-    setIsPoolLiveOpen(true);
-    setIsLaunchingPool(false);
+    const poolId = payload?.poolId;
+    if (poolId) {
+      router.push(`/pool/${poolId}`);
+    } else {
+      setIsLaunchingPool(false);
+      setErrorMessage("Pool created but failed to redirect.");
+    }
   };
 
   return (
@@ -122,11 +115,7 @@ export default function CreatePoolPage() {
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() =>
-              currentStep > 1
-                ? setCurrentStep(currentStep - 1)
-                : router.push("/")
-            }
+            onClick={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : router.push("/")}
             className="text-[13px] font-semibold font-card text-text-muted transition-colors hover:text-text-dark"
           >
             ←
@@ -135,9 +124,6 @@ export default function CreatePoolPage() {
             Create Goal Pool
           </h1>
         </div>
-        <button className="rounded-full bg-primary px-5 py-2 text-xs font-semibold font-card text-white shadow-[0_10px_24px_rgba(51,94,255,0.24)] transition-colors hover:bg-primary-dark">
-          Preview
-        </button>
       </div>
 
       {/* Step progress */}
@@ -149,11 +135,11 @@ export default function CreatePoolPage() {
         />
       </div>
 
-      {errorMessage ? (
+      {errorMessage && (
         <div className="mb-6 rounded-[18px] border border-danger/20 bg-danger/5 px-4 py-3 text-sm font-medium text-danger">
           {errorMessage}
         </div>
-      ) : null}
+      )}
 
       {/* Content area */}
       <div className="flex flex-col gap-7 xl:flex-row">
@@ -208,13 +194,6 @@ export default function CreatePoolPage() {
           requiredFields={[...membersData.identityFields, ...membersData.customFields]}
         />
       </div>
-
-      <PoolLiveSuccess
-        isOpen={isPoolLiveOpen}
-        onClose={() => setIsPoolLiveOpen(false)}
-        poolLink={createdPoolLink || poolLink}
-        onBackToDashboard={() => router.push("/")}
-      />
     </div>
   );
 }

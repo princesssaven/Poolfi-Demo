@@ -954,32 +954,3 @@ export async function contributeToPool(input: {
   } as const;
 }
 
-export async function getPublicPoolBySlug(slug: string) {
-  const [pool] = await getDb()
-    .select()
-    .from(pools)
-    .where(eq(pools.slug, slug))
-    .limit(1);
-
-  if (!pool) {
-    return null;
-  }
-
-  const members = await getMembersForPool(pool.id);
-  const metrics = getPoolMetrics(pool, members);
-  const categoryMeta = getCategoryMeta(pool.category);
-
-  return {
-    category: `${categoryMeta.emoji} ${categoryMeta.label}`,
-    closesDate: `Closes ${formatDate(pool.deadline)}`,
-    daysLeft: getDaysLeft(pool.deadline),
-    description: pool.description,
-    id: pool.id,
-    isCompleted: pool.status === "completed",
-    name: pool.name,
-    perPersonAmount: pool.perPersonAmount,
-    raised: metrics.raised,
-    targetAmount: pool.targetAmount,
-    totalMembers: metrics.totalMembers,
-  };
-}
