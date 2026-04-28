@@ -1,11 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import NotificationIcon from "@/src/assets/icons/notification.svg";
+import SettingsIcon from "@/src/assets/icons/settings.svg";
 import CreatePoolModal from "@/src/components/create-pool/CreatePoolModal";
 import Sidebar from "@/src/components/layout/Sidebar";
 import TopHeader from "@/src/components/layout/TopHeader";
+import { useDashboardBadges } from "@/src/components/layout/useDashboardBadges";
 import type { AppUser } from "@/src/lib/auth/user";
 
 function getPageTitle(pathname: string) {
@@ -45,10 +49,12 @@ export default function DashboardShell({
   const [isCreatePoolModalOpen, setIsCreatePoolModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const { badgeCounts } = useDashboardBadges();
   const pageTitle = useMemo(() => getPageTitle(pathname), [pathname]);
   const isCreatePoolLauncherRoute = pathname === "/create-pool-new";
   const isCreatePoolModalVisible =
     isCreatePoolModalOpen || isCreatePoolLauncherRoute;
+  const unreadNotifications = badgeCounts.unreadNotifications;
 
   useEffect(() => {
     let isMounted = true;
@@ -129,6 +135,7 @@ export default function DashboardShell({
         onLogout={handleLogout}
         user={currentUser}
         isSigningOut={isSigningOut}
+        badgeCounts={badgeCounts}
       />
       <Sidebar
         variant="desktop"
@@ -136,6 +143,7 @@ export default function DashboardShell({
         onLogout={handleLogout}
         user={currentUser}
         isSigningOut={isSigningOut}
+        badgeCounts={badgeCounts}
       />
 
       <main className="min-w-0 px-4 py-4 sm:px-6 sm:py-6 lg:ml-[260px] lg:px-8 lg:py-8">
@@ -163,6 +171,41 @@ export default function DashboardShell({
               </h1>
             </div>
 
+            <div className="flex shrink-0 items-center gap-2">
+              <Link
+                href="/notifications"
+                className={`relative flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${
+                  pathname === "/notifications"
+                    ? "border-primary bg-primary-light text-primary"
+                    : "border-border bg-white text-text-muted hover:bg-gray-50"
+                }`}
+                aria-label={
+                  unreadNotifications > 0
+                    ? `Notifications, ${unreadNotifications} unread`
+                    : "Notifications"
+                }
+              >
+                <NotificationIcon className="h-5 w-5" />
+                {unreadNotifications > 0 ? (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                  </span>
+                ) : null}
+              </Link>
+
+              <Link
+                href="/settings"
+                className={`flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${
+                  pathname === "/settings"
+                    ? "border-primary bg-primary-light text-primary"
+                    : "border-border bg-white text-text-muted hover:bg-gray-50"
+                }`}
+                aria-label="Settings"
+              >
+                <SettingsIcon className="h-5 w-5" />
+              </Link>
+            </div>
+
             <button
               type="button"
               onClick={openCreatePoolModal}
@@ -173,7 +216,11 @@ export default function DashboardShell({
           </div>
         </div>
 
-        <TopHeader onCreatePool={openCreatePoolModal} user={currentUser} />
+        <TopHeader
+          onCreatePool={openCreatePoolModal}
+          user={currentUser}
+          badgeCounts={badgeCounts}
+        />
         <div className="min-w-0">{children}</div>
       </main>
 

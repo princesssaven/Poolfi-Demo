@@ -14,7 +14,7 @@ import WalletIcon from "@/src/assets/icons/wallet.svg";
 import NotificationIcon from "@/src/assets/icons/notification.svg";
 import SettingsIcon from "@/src/assets/icons/settings.svg";
 import type { AppUser } from "@/src/lib/auth/user";
-import { useDashboardBadges } from "@/src/components/layout/useDashboardBadges";
+import type { DashboardBadgeCounts } from "@/src/components/layout/useDashboardBadges";
 
 const mainNav = [
   {
@@ -72,6 +72,7 @@ interface SidebarProps {
   onLogout?: () => void;
   user?: AppUser | null;
   isSigningOut?: boolean;
+  badgeCounts: DashboardBadgeCounts;
 }
 
 export default function Sidebar({
@@ -82,13 +83,13 @@ export default function Sidebar({
   onLogout,
   user,
   isSigningOut = false,
+  badgeCounts,
 }: SidebarProps) {
   const pathname = usePathname();
   const isMobile = variant === "mobile";
   const userDisplayName = user?.displayName ?? "PoolFi User";
   const userSecondary = user?.email || user?.pseudonym || "Signed in";
   const userInitials = user?.initials ?? "PF";
-  const { badgeCounts } = useDashboardBadges();
 
   return (
     <aside

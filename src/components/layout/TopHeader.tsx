@@ -5,19 +5,21 @@ import { usePathname } from "next/navigation";
 import NotificationIcon from "@/src/assets/icons/notification.svg";
 import SettingsIcon from "@/src/assets/icons/settings.svg";
 import DownloadIcon from "@/src/assets/icons/download.svg";
-import { useDashboardBadges } from "@/src/components/layout/useDashboardBadges";
+import type { DashboardBadgeCounts } from "@/src/components/layout/useDashboardBadges";
 import type { AppUser } from "@/src/lib/auth/user";
 
 interface TopHeaderProps {
   hideDefault?: boolean;
   onCreatePool?: () => void;
   user?: AppUser | null;
+  badgeCounts: DashboardBadgeCounts;
 }
 
 export default function TopHeader({
   hideDefault,
   onCreatePool,
   user,
+  badgeCounts,
 }: TopHeaderProps) {
   const pathname = usePathname();
   const isMyPools = pathname === "/my-pools";
@@ -29,7 +31,6 @@ export default function TopHeader({
   const isImpactContribution = pathname.startsWith("/impact-contribution");
   const isNotifications = pathname === "/notifications";
   const isSettings = pathname === "/settings";
-  const { badgeCounts } = useDashboardBadges();
   const unreadNotifications = badgeCounts.unreadNotifications;
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
