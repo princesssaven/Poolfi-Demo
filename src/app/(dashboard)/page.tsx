@@ -65,14 +65,6 @@ interface LatestFeaturedPoolPayload {
   };
 }
 
-const fallbackFeaturedPool = {
-  title: "Clean Water for Oguta Community, Imo State",
-  description:
-    "Help build a functioning borehole for 3,000+ residents who currently walk 2km daily for water.",
-  raised: 670000,
-  target: 1000000,
-};
-
 export default function HomePage() {
   const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
   const [data, setData] = useState<HomeDashboardData>(emptyHomeData);
@@ -180,7 +172,7 @@ export default function HomePage() {
                     raised: featuredPool.raised,
                     target: featuredPool.targetAmount,
                   }
-                : fallbackFeaturedPool
+                : null
             }
           />
           <RecentActivitySidebar activities={data.activities} />

@@ -9,7 +9,7 @@ interface FeaturedPool {
 }
 
 interface ImpactSpotlightProps {
-  pool: FeaturedPool;
+  pool: FeaturedPool | null;
 }
 
 function formatCurrency(amount: number): string {
@@ -18,8 +18,8 @@ function formatCurrency(amount: number): string {
 }
 
 export default function ImpactSpotlight({ pool }: ImpactSpotlightProps) {
-  const safeRaised = Number.isFinite(pool.raised) ? pool.raised : 0;
-  const safeTarget = Number.isFinite(pool.target) ? pool.target : 0;
+  const safeRaised = pool && Number.isFinite(pool.raised) ? pool.raised : 0;
+  const safeTarget = pool && Number.isFinite(pool.target) ? pool.target : 0;
   const targetForPercentage = safeTarget > 0 ? safeTarget : 1;
   const targetPercentage = Math.min(
     Math.round((safeRaised / targetForPercentage) * 100),
@@ -31,6 +31,25 @@ export default function ImpactSpotlight({ pool }: ImpactSpotlightProps) {
     const timer = setTimeout(() => setWidth(targetPercentage), 100);
     return () => clearTimeout(timer);
   }, [targetPercentage]);
+
+  if (!pool) {
+    return (
+      <div>
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="font-heading text-base font-bold tracking-[-0.3px] text-text-dark">
+            Impact Spotlight
+          </h2>
+          <Link href="/impact" className="text-primary text-[13px] font-bold hover:underline">
+            Explore →
+          </Link>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-white p-5 text-sm text-text-muted sm:p-6">
+          No featured impact pool is available yet.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

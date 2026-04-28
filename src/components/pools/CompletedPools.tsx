@@ -1,4 +1,4 @@
-import type { CompletedPoolData } from "@/src/data/mockData";
+import type { CompletedPoolData } from "@/src/types/pools";
 
 interface CompletedPoolsProps {
   pools: CompletedPoolData[];

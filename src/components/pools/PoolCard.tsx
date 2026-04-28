@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { PoolCardData } from "@/src/data/mockData";
+import type { PoolCardData } from "@/src/types/pools";
 
 function formatCurrency(amount: number): string {
   return `₦${amount.toLocaleString("en-NG")}`;

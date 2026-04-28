@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import SummaryChips from "@/src/components/pools/SummaryChips";
 import PoolCard from "@/src/components/pools/PoolCard";
 import CompletedPools from "@/src/components/pools/CompletedPools";
-import type { CompletedPoolData, PoolCardData } from "@/src/data/mockData";
+import type { CompletedPoolData, PoolCardData } from "@/src/types/pools";
 
 interface MyPoolsData {
   completedPools: CompletedPoolData[];
