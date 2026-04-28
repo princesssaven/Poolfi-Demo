@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import NotificationIcon from "@/src/assets/icons/notification.svg";
 import SettingsIcon from "@/src/assets/icons/settings.svg";
 import DownloadIcon from "@/src/assets/icons/download.svg";
+import { useDashboardBadges } from "@/src/components/layout/useDashboardBadges";
 import type { AppUser } from "@/src/lib/auth/user";
 
 interface TopHeaderProps {
@@ -25,6 +27,10 @@ export default function TopHeader({
     pathname === "/create-impact-pool";
   const isPoolDashboard = pathname.startsWith("/pool/");
   const isImpactContribution = pathname.startsWith("/impact-contribution");
+  const isNotifications = pathname === "/notifications";
+  const isSettings = pathname === "/settings";
+  const { badgeCounts } = useDashboardBadges();
+  const unreadNotifications = badgeCounts.unreadNotifications;
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
     day: "numeric",
@@ -51,18 +57,37 @@ export default function TopHeader({
       </div>
 
       <div className="flex flex-wrap items-center justify-end gap-2.5">
-        <button
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white shadow-sm transition-colors hover:bg-gray-50"
-          aria-label="Notifications"
+        <Link
+          href="/notifications"
+          className={`relative flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition-colors ${
+            isNotifications
+              ? "border-primary bg-primary-light text-primary"
+              : "border-border bg-white text-text-muted hover:bg-gray-50"
+          }`}
+          aria-label={
+            unreadNotifications > 0
+              ? `Notifications, ${unreadNotifications} unread`
+              : "Notifications"
+          }
         >
-          <NotificationIcon className="w-5 h-5 text-text-muted" />
-        </button>
-        <button
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white shadow-sm transition-colors hover:bg-gray-50"
+          <NotificationIcon className="h-5 w-5" />
+          {unreadNotifications > 0 ? (
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+              {unreadNotifications > 9 ? "9+" : unreadNotifications}
+            </span>
+          ) : null}
+        </Link>
+        <Link
+          href="/settings"
+          className={`flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition-colors ${
+            isSettings
+              ? "border-primary bg-primary-light text-primary"
+              : "border-border bg-white text-text-muted hover:bg-gray-50"
+          }`}
           aria-label="Settings"
         >
-          <SettingsIcon className="w-5 h-5 text-text-muted" />
-        </button>
+          <SettingsIcon className="h-5 w-5" />
+        </Link>
 
         {isMyPools ? (
           <button className="flex items-center gap-2 rounded-full bg-text-dark px-5 py-2.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90">

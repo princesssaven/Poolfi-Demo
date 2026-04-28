@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import LogoIcon from "@/src/assets/icons/logo.svg";
 import CloseIcon from "@/src/assets/icons/close.svg";
 import HomeIcon from "@/src/assets/icons/home.svg";
@@ -15,6 +14,7 @@ import WalletIcon from "@/src/assets/icons/wallet.svg";
 import NotificationIcon from "@/src/assets/icons/notification.svg";
 import SettingsIcon from "@/src/assets/icons/settings.svg";
 import type { AppUser } from "@/src/lib/auth/user";
+import { useDashboardBadges } from "@/src/components/layout/useDashboardBadges";
 
 const mainNav = [
   {
@@ -88,30 +88,7 @@ export default function Sidebar({
   const userDisplayName = user?.displayName ?? "PoolFi User";
   const userSecondary = user?.email || user?.pseudonym || "Signed in";
   const userInitials = user?.initials ?? "PF";
-
-  const [badgeCounts, setBadgeCounts] = useState<{ unreadNotifications: number; activePools: number }>({ unreadNotifications: 0, activePools: 0 });
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadBadges = async () => {
-      try {
-        const response = await fetch("/api/badges", { cache: "no-store" });
-        const data = await response.json();
-        if (isMounted) {
-          setBadgeCounts(data);
-        }
-      } catch {
-        // silently ignore
-      }
-    };
-
-    void loadBadges();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { badgeCounts } = useDashboardBadges();
 
   return (
     <aside

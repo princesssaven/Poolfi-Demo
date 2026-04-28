@@ -1,4 +1,4 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { getDb } from "@/src/lib/db";
 import {
   notifications,
@@ -310,6 +310,15 @@ export async function getNotificationsForUser(userId: string) {
     .from(notifications)
     .where(eq(notifications.userId, userId))
     .orderBy(desc(notifications.createdAt));
+}
+
+export async function markNotificationsReadForUser(userId: string) {
+  await getDb()
+    .update(notifications)
+    .set({ readAt: new Date() })
+    .where(
+      and(eq(notifications.userId, userId), isNull(notifications.readAt))
+    );
 }
 
 export async function getImpactPoolsViewData() {
