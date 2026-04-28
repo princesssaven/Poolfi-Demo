@@ -78,6 +78,28 @@ export default function NotificationsPage() {
     setIsMarkingRead(false);
   };
 
+  const handleMarkRead = async (id: string) => {
+    // Only update if it's currently unread
+    const item = notifications.find((n) => n.id === id);
+    if (!item || item.read) return;
+
+    // Optimistic update
+    setNotifications((current) =>
+      current.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+    window.dispatchEvent(new Event(DASHBOARD_BADGES_CHANGED_EVENT));
+
+    try {
+      await fetch("/api/notifications", {
+        method: "PATCH",
+        body: JSON.stringify({ notificationId: id }),
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch {
+      // Revert on error? Or just leave it. Usually better to stay optimistic.
+    }
+  };
+
   return (
     <div className="space-y-6">
       <section className="rounded-[24px] border border-border bg-white p-6 shadow-sm">
@@ -141,11 +163,22 @@ export default function NotificationsPage() {
               );
 
               return item.href ? (
-                <Link key={item.id} href={item.href} className={cardClassName}>
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className={cardClassName}
+                  onClick={() => handleMarkRead(item.id)}
+                >
                   {content}
                 </Link>
               ) : (
-                <div key={item.id} className={cardClassName}>
+                <div
+                  key={item.id}
+                  className={cardClassName}
+                  onClick={() => handleMarkRead(item.id)}
+                  role="button"
+                  tabIndex={0}
+                >
                   {content}
                 </div>
               );

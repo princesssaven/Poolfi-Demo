@@ -321,6 +321,19 @@ export async function markNotificationsReadForUser(userId: string) {
     );
 }
 
+export async function markNotificationReadById(notificationId: string, userId: string) {
+  await getDb()
+    .update(notifications)
+    .set({ readAt: new Date() })
+    .where(
+      and(
+        eq(notifications.id, notificationId),
+        eq(notifications.userId, userId),
+        isNull(notifications.readAt)
+      )
+    );
+}
+
 export async function getImpactPoolsViewData() {
   const impactPools = await getDb()
     .select()
@@ -402,24 +415,60 @@ export async function getHomeDashboardData(userId: string) {
     };
   });
 
-  const locked = ownedPools.reduce((total, pool, index) => {
+  // Fetch all contributions made by this user
+  const userContributions = await getDb()
+    .select({
+      poolId: poolMembers.poolId,
+      amount: pools.perPersonAmount,
+      poolStatus: pools.status,
+    })
+    .from(poolMembers)
+    .innerJoin(pools, eq(poolMembers.poolId, pools.id))
+    .where(
+      and(
+        eq(poolMembers.contributorUserId, userId),
+        eq(poolMembers.status, "paid")
+      )
+    );
+
+  const lockedFromOwnedPools = ownedPools.reduce((total, pool, index) => {
     if (pool.status !== "active") {
       return total;
     }
-
     return total + getPoolMetrics(pool, allMembers[index] ?? []).raised;
   }, 0);
 
-  let available = ownedPools.reduce((total, pool, index) => {
+  const lockedFromContributions = userContributions.reduce((total, contribution) => {
+    // Only count contributions to pools the user doesn't own (to avoid double counting)
+    // and where the pool is still active
+    const isOwned = ownedPools.some((p) => p.id === contribution.poolId);
+    if (!isOwned && contribution.poolStatus === "active") {
+      return total + contribution.amount;
+    }
+    return total;
+  }, 0);
+
+  const locked = lockedFromOwnedPools + lockedFromContributions;
+
+  let availableFromOwnedPools = ownedPools.reduce((total, pool, index) => {
     if (pool.status !== "completed") {
       return total;
     }
-
     return total + getPoolMetrics(pool, allMembers[index] ?? []).raised;
   }, 0);
 
   // Add the user's converted USDC wallet balance to the available NGN balance
-  available += walletBalanceNgn;
+  const available = availableFromOwnedPools + walletBalanceNgn;
+
+  const activeOwned = ownedPools.filter((pool) => pool.status === "active").length;
+  const activeJoined = userContributions.filter((c) => 
+    c.poolStatus === "active" && !ownedPools.some(p => p.id === c.poolId)
+  ).length;
+  
+  const completedOwned = ownedPools.filter((pool) => pool.status === "completed").length;
+  const completedJoined = userContributions.filter((c) => 
+    c.poolStatus === "completed" && !ownedPools.some(p => p.id === c.poolId)
+  ).length;
 
   return {
     activities: recentNotifications.slice(0, 6).map((notification) => ({
@@ -430,9 +479,9 @@ export async function getHomeDashboardData(userId: string) {
       title: notification.title,
     })),
     balance: {
-      activePools: ownedPools.filter((pool) => pool.status === "active").length,
+      activePools: activeOwned + activeJoined,
       available,
-      completedPools: ownedPools.filter((pool) => pool.status === "completed").length,
+      completedPools: completedOwned + completedJoined,
       locked,
       totalBalance: locked + available,
     },
@@ -859,7 +908,8 @@ export async function contributeToPool(input: {
     poolId: input.poolId,
     name: displayName,
     phone: "",
-    customFieldValue: input.anonymous ? "" : input.userId,
+    customFieldValue: "", // This is now separate from the user ID
+    contributorUserId: input.userId,
     status: "paid",
     paidAt: new Date(),
   });

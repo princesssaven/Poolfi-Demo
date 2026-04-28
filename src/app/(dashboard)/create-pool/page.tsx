@@ -59,7 +59,7 @@ export default function CreatePoolPage() {
 
   // Step 3 data
   const [membersData, setMembersData] = useState({
-    identityFields: ["Full Name", "Matric. No", "Phone No"],
+    identityFields: [] as string[],
     customFields: [] as string[],
     members: [] as { name: string; phone: string; custom: string }[],
   });
@@ -80,7 +80,7 @@ export default function CreatePoolPage() {
 
   const poolNameForLink = basicsData.name || "300L Class Dues";
   const poolSlug = slugifyPoolName(poolNameForLink) || "unilag-class-dues-2025";
-  const poolLink = `poolfi.app/pool/${poolSlug}-x7k9m`;
+  const poolLink = `${poolSlug}-x7k9m`;
 
   const launchPool = async () => {
     setErrorMessage("");
@@ -205,6 +205,7 @@ export default function CreatePoolPage() {
           description={basicsData.description || undefined}
           target={basicsData.targetAmount || undefined}
           perPerson={basicsData.perPerson || undefined}
+          requiredFields={[...membersData.identityFields, ...membersData.customFields]}
         />
       </div>
 

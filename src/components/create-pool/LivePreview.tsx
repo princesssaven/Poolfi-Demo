@@ -17,8 +17,21 @@ export default function LivePreview({
   description,
   target,
   perPerson,
-  requiredFields = ["👤 Full Name", "🎓 Matric No."],
+  requiredFields = [],
 }: LivePreviewProps) {
+  const getFieldWithIcon = (field: string) => {
+    const fieldLower = field.toLowerCase();
+    if (fieldLower.includes("name")) return `👤 ${field}`;
+    if (fieldLower.includes("matric")) return `🎓 ${field}`;
+    if (fieldLower.includes("phone")) return `📞 ${field}`;
+    if (fieldLower.includes("email")) return `📧 ${field}`;
+    return `📝 ${field}`;
+  };
+
+  const fieldsToDisplay = requiredFields.length > 0 
+    ? requiredFields 
+    : ["Full Name", "Matric. No"];
+
   return (
     <div className="flex w-full shrink-0 flex-col gap-3 lg:w-[340px]">
       {/* Header */}
@@ -85,13 +98,13 @@ export default function LivePreview({
               Required Info
             </p>
             <div className="flex flex-col gap-1.5">
-              {requiredFields.map((field) => (
+              {fieldsToDisplay.map((field) => (
                 <div
                   key={field}
                   className="bg-white border border-border rounded-lg px-3 py-2"
                 >
                   <span className="text-xs font-medium text-text-dark font-card">
-                    {field}
+                    {getFieldWithIcon(field)}
                   </span>
                 </div>
               ))}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import * as XLSX from "xlsx";
 import RulesGearIcon from "@/src/assets/icons/rules-gear.svg";
 import PlusBlueIcon from "@/src/assets/icons/plus-blue.svg";
 import PlusOutlineBlueIcon from "@/src/assets/icons/plus-outline-blue.svg";
@@ -19,6 +20,8 @@ interface AddMembersStepProps {
   onBack: () => void;
 }
 
+const identityFieldOptions = ["Full Name", "Matric. No", "Phone No"];
+
 export default function AddMembersStep({
   data,
   onChange,
@@ -32,6 +35,71 @@ export default function AddMembersStep({
     phone: "",
     custom: "",
   });
+  const [uploadSuccess, setUploadSuccess] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result;
+      let parsedMembers: { name: string; phone: string; custom: string }[] = [];
+
+      if (file.name.toLowerCase().endsWith(".csv")) {
+        const text = result as string;
+        const lines = text.split("\n").filter((line) => line.trim());
+        parsedMembers = lines.map((line) => {
+          const [name, phone, custom] = line.split(",").map((s) => s.trim());
+          return { name: name || "", phone: phone || "", custom: custom || "" };
+        });
+      } else {
+        // Excel parsing
+        const workbook = XLSX.read(result, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+
+        parsedMembers = json
+          .map((row) => ({
+            name: String(row[0] || "").trim(),
+            phone: String(row[1] || "").trim(),
+            custom: String(row[2] || "").trim(),
+          }))
+          .filter((m) => m.name !== "");
+      }
+
+      const filteredMembers = parsedMembers.filter((m) => {
+        const n = m.name.toLowerCase();
+        // Skip common headers
+        return (
+          n !== "name" &&
+          n !== "full name" &&
+          n !== "matric. no" &&
+          n !== "matric no" &&
+          n !== "phone" &&
+          n !== "phone no" &&
+          n !== ""
+        );
+      });
+
+      if (filteredMembers.length > 0) {
+        onChange({ ...data, members: [...data.members, ...filteredMembers] });
+        // Optional: show a temporary success state
+        setUploadSuccess(filteredMembers.length);
+        setTimeout(() => setUploadSuccess(0), 3000);
+      }
+
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    if (file.name.toLowerCase().endsWith(".csv")) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsArrayBuffer(file);
+    }
+  };
 
   const addCustomField = () => {
     if (customLabel.trim()) {
@@ -49,6 +117,17 @@ export default function AddMembersStep({
       onChange({ ...data, members: [...data.members, newMember] });
       setNewMember({ name: "", phone: "", custom: "" });
     }
+  };
+
+  const toggleIdentityField = (field: string) => {
+    const isSelected = data.identityFields.includes(field);
+
+    onChange({
+      ...data,
+      identityFields: isSelected
+        ? data.identityFields.filter((selectedField) => selectedField !== field)
+        : [...data.identityFields, field],
+    });
   };
 
   const allFields = [...data.identityFields, ...data.customFields];
@@ -77,21 +156,39 @@ export default function AddMembersStep({
             Required Identity Fields
           </h3>
           <div className="flex gap-2.5 flex-wrap">
-            {data.identityFields.map((field) => (
-              <span
-                key={field}
-                className="border border-border rounded-[10px] px-4 py-2 text-[13px] font-semibold font-card text-text-dark bg-white"
-              >
-                {field}
-              </span>
-            ))}
+            {identityFieldOptions.map((field) => {
+              const isSelected = data.identityFields.includes(field);
+
+              return (
+                <button
+                  key={field}
+                  type="button"
+                  onClick={() => toggleIdentityField(field)}
+                  aria-pressed={isSelected}
+                  className={`border rounded-[10px] px-4 py-2 text-[13px] font-semibold font-card transition-all ${
+                    isSelected
+                      ? "border-primary bg-primary text-white shadow-[0_8px_18px_rgba(27,79,216,0.2)]"
+                      : "border-border bg-white text-text-dark hover:border-primary hover:bg-primary-light"
+                  }`}
+                >
+                  {field}
+                </button>
+              );
+            })}
             {data.customFields.map((field) => (
-              <span
+              <button
                 key={field}
-                className="border border-border rounded-[10px] px-4 py-2 text-[13px] font-semibold font-card text-text-dark bg-white"
+                type="button"
+                onClick={() => {
+                  onChange({
+                    ...data,
+                    customFields: data.customFields.filter((f) => f !== field),
+                  });
+                }}
+                className="border border-primary bg-primary text-white rounded-[10px] px-4 py-2 text-[13px] font-semibold font-card shadow-[0_8px_18px_rgba(27,79,216,0.2)] hover:bg-primary-dark transition-colors"
               >
                 {field}
-              </span>
+              </button>
             ))}
           </div>
 
@@ -144,13 +241,55 @@ export default function AddMembersStep({
           </h3>
 
           {/* CSV Upload area */}
-          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-gray-300 p-6 sm:p-8">
-            <FileAttachmentIcon className="w-10 h-10 text-primary" />
-            <p className="text-base font-bold text-text-dark font-card">
-              Required Identity Fields
-            </p>
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className={`flex flex-col items-center gap-2 rounded-xl border border-dashed p-6 sm:p-8 cursor-pointer transition-all bg-white ${
+              uploadSuccess > 0
+                ? "border-emerald bg-emerald-light/10"
+                : "border-gray-300 hover:border-primary hover:bg-primary-light/10"
+            }`}
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept=".csv, .xlsx, .xls"
+              className="hidden"
+            />
+            {uploadSuccess > 0 ? (
+              <>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald text-white">
+                  <svg
+                    width="20"
+                    height="20"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <p className="text-base font-bold text-emerald font-card">
+                  Imported {uploadSuccess} members!
+                </p>
+              </>
+            ) : (
+              <>
+                <FileAttachmentIcon className="w-10 h-10 text-primary" />
+                <p className="text-base font-bold text-text-dark font-card">
+                  Upload CSV or Excel File
+                </p>
+              </>
+            )}
             <p className="text-[13px] font-semibold font-card text-text-dark">
-              {allFields.join(", ")}
+              {allFields.length > 0
+                ? allFields.join(", ")
+                : "No fields selected yet"}
             </p>
           </div>
 

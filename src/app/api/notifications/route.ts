@@ -4,6 +4,7 @@ import { isDatabaseConfigured } from "@/src/lib/db";
 import {
   getNotificationsForUser,
   markNotificationsReadForUser,
+  markNotificationReadById,
 } from "@/src/lib/pools/store";
 
 function formatTime(value: Date) {
@@ -43,21 +44,29 @@ export async function GET() {
   });
 }
 
-export async function PATCH() {
+export async function PATCH(request: Request) {
   if (!isDatabaseConfigured()) {
     return NextResponse.json(
       { message: "Add DATABASE_URL to .env.local to update notifications." },
       { status: 503 }
     );
   }
-
+ 
   const user = await getCurrentDatabaseUser();
-
+ 
   if (!user) {
     return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
   }
-
-  await markNotificationsReadForUser(user.id);
-
+ 
+  const payload = (await request.json().catch(() => ({}))) as {
+    notificationId?: string;
+  };
+ 
+  if (payload.notificationId) {
+    await markNotificationReadById(payload.notificationId, user.id);
+  } else {
+    await markNotificationsReadForUser(user.id);
+  }
+ 
   return NextResponse.json({ ok: true });
 }
