@@ -263,7 +263,6 @@ export default function AdminPoolView({
            </div>
         </div>
       </div>
-    </div>
 
       {/* Slide-out Drawer Overlay */}
       {selectedMember && (
@@ -286,20 +285,19 @@ export default function AdminPoolView({
                   <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   Pool closes in
                 </div>
-                <p className="text-[28px] font-extrabold">{pool.daysLeft} days, {Math.floor(Math.random() * 24)} hrs</p>
+                <p className="text-[28px] font-extrabold">{pool.daysLeft} days left</p>
               </div>
             </div>
 
-            {/* Pool Info Card */}
+            {/* Pool Info */}
             <div className="p-6 flex flex-col gap-5">
               <div className="flex items-center gap-2 text-[10px] font-bold text-[#6b7280] uppercase tracking-widest">
                 <span>🔒</span>
                 <span>{pool.category} · Private</span>
               </div>
               <h3 className="text-[20px] font-extrabold text-[#1a1f2e] leading-tight">{pool.title}</h3>
-              <p className="text-[13px] text-[#6b7280]">You've been invited to contribute</p>
+              <p className="text-[13px] text-[#6b7280]">You&apos;ve been invited to contribute</p>
 
-              {/* Detail Rows */}
               <div className="flex flex-col gap-3 border-t border-[#e5e8ef] pt-4">
                 <div className="flex justify-between items-center">
                   <span className="text-[13px] text-[#6b7280]">Your contribution</span>
@@ -319,7 +317,7 @@ export default function AdminPoolView({
                 </div>
               </div>
 
-              {/* Status Badge */}
+              {/* Selected Member Badge */}
               <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-3">
                 <div className="size-9 rounded-full flex items-center justify-center text-white text-[13px] font-bold" style={{ backgroundColor: selectedMember.bgColor }}>
                   {selectedMember.initials}
@@ -333,15 +331,15 @@ export default function AdminPoolView({
                 </div>
               </div>
 
-              {/* Action Buttons */}
+              {/* Actions */}
               <div className="flex flex-col gap-2.5">
                 <button className="bg-[#eef3ff] text-[#1b4fd8] font-bold py-3.5 rounded-xl text-[14px] hover:bg-[#dde6ff] transition-colors">
                   Join Pool (Pay Later)
                 </button>
                 <button className="bg-[#1b4fd8] text-white font-bold py-3.5 rounded-xl text-[14px] hover:bg-[#0f2fa8] transition-colors shadow-lg shadow-blue-500/20">
-                  Join & Pay Now – {pool.perPerson}
+                  Join &amp; Pay Now – {pool.perPerson}
                 </button>
-                <p className="text-[11px] text-[#6b7280] text-center">Don't have an account? Sign up to join.</p>
+                <p className="text-[11px] text-[#6b7280] text-center">Don&apos;t have an account? Sign up to join.</p>
               </div>
 
               {/* Info Box */}
@@ -354,7 +352,7 @@ export default function AdminPoolView({
                   </div>
                   <div className="flex items-start gap-3">
                     <div className="bg-[#1b4fd8] text-white size-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</div>
-                    <p className="text-[12px] text-[#1340b8]/80 leading-relaxed">You appear in the member list as Joined (Pending) so the admin knows you're aware.</p>
+                    <p className="text-[12px] text-[#1340b8]/80 leading-relaxed">You appear in the member list as Joined (Pending) so the admin knows you&apos;re aware.</p>
                   </div>
                   <div className="flex items-start gap-3">
                     <div className="bg-[#1b4fd8] text-white size-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</div>
@@ -363,7 +361,7 @@ export default function AdminPoolView({
                 </div>
               </div>
 
-              {/* Share Section */}
+              {/* Share */}
               <div className="flex flex-col gap-2.5 border-t border-[#e5e8ef] pt-4">
                 <p className="text-[13px] font-bold text-[#1a1f2e]">📣 Share this pool</p>
                 <button onClick={handleWhatsApp} className="flex items-center gap-3 p-3 border border-[#e5e8ef] rounded-xl hover:bg-gray-50 transition-colors w-full">
