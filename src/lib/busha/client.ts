@@ -23,6 +23,7 @@ export async function getExchangeRate(base: string = "USDC", target: string = "N
         "Authorization": `Bearer ${BUSHA_API_KEY}`,
         "Content-Type": "application/json",
       },
+      signal: AbortSignal.timeout(1500),
       next: {
         revalidate: 600, // Cache for 10 minutes (600 seconds)
       },

@@ -5,26 +5,8 @@ import { useEffect, useState } from "react";
 import Toggle from "@/src/components/ui/Toggle";
 import AddMoneyModal from "@/src/components/create-pool/AddMoneyModal";
 
-interface BudgetItem {
-  label: string;
-  amount: number;
-  percentage: number;
-  color: string;
-}
-
-interface UpdateItem {
-  id: number;
-  author: string;
-  role: string;
-  date: string;
-  title: string;
-  body: string;
-  reactions: { icon: string; count: number }[];
-  imageEmoji?: string;
-}
-
 interface ContributorItem {
-  id: number;
+  id: string;
   initials: string;
   name: string;
   handle: string;
@@ -76,145 +58,20 @@ interface ImpactContributionDetails {
   pool: ImpactPoolData;
   members: ImpactPoolMember[];
   activities: ImpactPoolActivity[];
+  recentContributors: Array<{
+    amount: number;
+    anonymous: boolean;
+    color: string;
+    handle: string;
+    id: string;
+    initials: string;
+    name: string;
+    time: string;
+    userId?: string | null;
+  }>;
 }
 
 const contributionOptions = [500, 1000, 2000, 5000];
-
-const budgetItems: BudgetItem[] = [
-  {
-    label: "Borehole Drilling & Casing",
-    amount: 400000,
-    percentage: 40,
-    color: "#12b76a",
-  },
-  {
-    label: "Solar Pump & Electrical",
-    amount: 250000,
-    percentage: 25,
-    color: "#f79009",
-  },
-  {
-    label: "Distribution Pipes & Taps",
-    amount: 200000,
-    percentage: 20,
-    color: "#1b4fd8",
-  },
-  {
-    label: "Labour & Installation",
-    amount: 150000,
-    percentage: 15,
-    color: "#8b5cf6",
-  },
-];
-
-const updates: UpdateItem[] = [
-  {
-    id: 1,
-    author: "Chukwuemeka Dike",
-    role: "Creator",
-    date: "Feb 15, 2026 · Update #2",
-    title: "Drilling has officially started",
-    body:
-      "Great news — drilling began yesterday. The engineering team from AquaTech arrived on site Monday and the first 20 metres have been completed. We expect the casing and pump installation to begin next week if weather conditions hold.",
-    reactions: [
-      { icon: "❤️", count: 142 },
-      { icon: "🎉", count: 89 },
-      { icon: "💬", count: 14 },
-    ],
-    imageEmoji: "🚰",
-  },
-  {
-    id: 2,
-    author: "Chukwuemeka Dike",
-    role: "Creator",
-    date: "Feb 5, 2026 · Update #1",
-    title: "We’ve reached 60% of our target",
-    body:
-      "We’ve reached 60% of our target and signed the contract with AquaTech NG. The first withdrawal of ₦200,000 was approved by 3 of 5 randomly selected contributors and has been released. Work is scheduled to begin on Feb 14th. Thank you all so much — this community has waited too long for clean water.",
-    reactions: [
-      { icon: "❤️", count: 98 },
-      { icon: "🎉", count: 213 },
-    ],
-  },
-];
-
-const recentContributors: ContributorItem[] = [
-  {
-    id: 1,
-    initials: "EO",
-    name: "Emeka Obi",
-    handle: "BlueLagoon#4821",
-    amount: 1000,
-    time: "Just now",
-    color: "#3159f1",
-    isYou: true,
-  },
-  {
-    id: 2,
-    initials: "CE",
-    name: "Chioma Eze",
-    handle: "SilverFalcon#3312",
-    amount: 5000,
-    time: "1 hr ago",
-    color: "#12b76a",
-  },
-  {
-    id: 3,
-    initials: "?",
-    name: "Anonymous",
-    handle: "Hidden contributor",
-    amount: 2000,
-    time: "3 hrs ago",
-    color: "#d0d5dd",
-    anonymous: true,
-  },
-  {
-    id: 4,
-    initials: "YA",
-    name: "Yemi Adesanya",
-    handle: "GoldRiver#7721",
-    amount: 1000,
-    time: "5 hrs ago",
-    color: "#7c3aed",
-  },
-  {
-    id: 5,
-    initials: "BM",
-    name: "Bello Musa",
-    handle: "IronEagle#9941",
-    amount: 10000,
-    time: "Yesterday",
-    color: "#e11d48",
-  },
-  {
-    id: 6,
-    initials: "AO",
-    name: "Adaeze Okeke",
-    handle: "CoralWave#5534",
-    amount: 500,
-    time: "Yesterday",
-    color: "#0891b2",
-  },
-  {
-    id: 7,
-    initials: "?",
-    name: "Anonymous",
-    handle: "Hidden contributor",
-    amount: 3000,
-    time: "2 days ago",
-    color: "#d0d5dd",
-    anonymous: true,
-  },
-  {
-    id: 8,
-    initials: "SF",
-    name: "Segun Fashola",
-    handle: "BlueMoon#2287",
-    amount: 2000,
-    time: "2 days ago",
-    color: "#16a34a",
-  },
-];
 
 function formatCurrency(amount: number) {
   return `₦${amount.toLocaleString("en-NG")}`;
@@ -389,7 +246,7 @@ export default function ImpactContributionPage() {
           color: ["#12b76a", "#f79009", "#1b4fd8", "#8b5cf6"][index % 4],
         };
       })
-    : budgetItems;
+    : [];
 
   const updatesData = activities.length > 0
     ? activities.slice(0, 3).map((activity, index) => {
@@ -397,7 +254,7 @@ export default function ImpactContributionPage() {
         const body = activity.message.replace(title, "").trim();
 
         return {
-          id: index + 1,
+          id: activity.id,
           author: impactPool?.ownerName ?? "Creator",
           role: "Creator",
           date: `${new Date(activity.createdAt).toLocaleDateString("en-GB", {
@@ -407,49 +264,22 @@ export default function ImpactContributionPage() {
           })} · Update #${index + 1}`,
           title: title || "Pool update",
           body: body || activity.message,
-          reactions:
-            index === 0
-              ? [
-                  { icon: "❤️", count: 142 },
-                  { icon: "🎉", count: 89 },
-                  { icon: "💬", count: 14 },
-                ]
-              : [
-                  { icon: "❤️", count: 98 },
-                  { icon: "🎉", count: 213 },
-                ],
-          imageEmoji: index === 0 ? "🚰" : undefined,
         };
       })
-    : updates;
+    : [];
 
   const paidMembers = members.filter((member) => member.status === "paid");
-  const recentContributorsData =
-    paidMembers.length > 0
-      ? paidMembers.slice(0, 8).map((member, index) => ({
-          id: member.id,
-          initials:
-            member.name
-              .split(/\s+/)
-              .filter(Boolean)
-              .slice(0, 2)
-              .map((part) => part.charAt(0).toUpperCase())
-              .join("") || "PF",
-          name: member.name,
-          handle: member.customFieldValue || member.phone || "Contributor",
-          amount: impactPool?.perPersonAmount ?? 0,
-          time: member.paidAt ? formatRelativeTime(member.paidAt) : "Pending",
-          color: ["#3159f1", "#12b76a", "#7c3aed", "#0891b2", "#e11d48", "#16a34a"][index % 6],
-          isYou: false as const,
-          anonymous: false as const,
-        }))
-      : recentContributors;
+  const recentContributorsData: ContributorItem[] =
+    impactDetails?.recentContributors.slice(0, 8).map((contributor) => ({
+      ...contributor,
+      isYou: false,
+      time: formatRelativeTime(contributor.time),
+    })) ?? [];
 
-  const totalPaidContributors = paidMembers.length || recentContributors.length;
+  const totalPaidContributors = paidMembers.length;
   const poolOwnerName = impactPool?.ownerName ?? "Creator";
-  const approversText = impactPool?.approversCount ?? "3 of 5";
-  const releasedValue = impactPool ? formatCurrency(Math.round(poolRaised * 0.2)) : "–";
-  const pendingValue = impactPool?.status === "active" ? "Yes" : "No";
+  const approversText = impactPool?.approversCount ?? "Not configured";
+  const withdrawalStatus = impactPool?.status === "active" ? "No request" : impactPool?.status ?? "N/A";
 
   if (isLoadingPool) {
     return (
@@ -474,7 +304,7 @@ export default function ImpactContributionPage() {
       >
         <div className="space-y-5">
           <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[1px] text-white/90">
-            🔒 Goal Pool · Private · Invite Only
+            🔒 Impact Pool · Community Governed
           </div>
 
           <div className="space-y-3">
@@ -607,31 +437,37 @@ export default function ImpactContributionPage() {
             </div>
 
             <div className="space-y-6 p-5 sm:p-6">
-              {budgetItemsData.map((item) => (
-                <div key={item.label} className="space-y-2.5">
-                  <div className="flex items-center justify-between gap-4">
-                    <h3 className="font-heading text-[18px] font-bold text-text-dark">
-                      {item.label}
-                    </h3>
-                    <div className="text-right">
-                      <p className="font-heading text-[18px] font-bold text-text-dark">
-                        {formatCurrency(item.amount)}
-                      </p>
-                      <p className="text-[13px] text-text-muted">{item.percentage}%</p>
+              {budgetItemsData.length > 0 ? (
+                budgetItemsData.map((item) => (
+                  <div key={item.label} className="space-y-2.5">
+                    <div className="flex items-center justify-between gap-4">
+                      <h3 className="font-heading text-[18px] font-bold text-text-dark">
+                        {item.label}
+                      </h3>
+                      <div className="text-right">
+                        <p className="font-heading text-[18px] font-bold text-text-dark">
+                          {formatCurrency(item.amount)}
+                        </p>
+                        <p className="text-[13px] text-text-muted">{item.percentage}%</p>
+                      </div>
+                    </div>
+
+                    <div className="h-1.5 overflow-hidden rounded-full bg-[#eef2f7]">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${item.percentage}%`,
+                          backgroundColor: item.color,
+                        }}
+                      />
                     </div>
                   </div>
-
-                  <div className="h-1.5 overflow-hidden rounded-full bg-[#eef2f7]">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${item.percentage}%`,
-                        backgroundColor: item.color,
-                      }}
-                    />
-                  </div>
+                ))
+              ) : (
+                <div className="rounded-[16px] border border-border bg-[#fbfcff] px-4 py-5 text-sm text-text-muted">
+                  No budget milestones have been published for this pool yet.
                 </div>
-              ))}
+              )}
             </div>
           </section>
 
@@ -643,62 +479,49 @@ export default function ImpactContributionPage() {
             </div>
 
             <div className="space-y-5 p-5 sm:p-6">
-              {updatesData.map((update, index) => (
-                <article
-                  key={update.id}
-                  className={`space-y-4 ${
-                    index !== updatesData.length - 1
-                      ? "border-b border-border pb-6"
-                      : ""
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-dark text-[15px] font-bold text-white">
-                      {poolOwnerName
-                        .split(/\s+/)
-                        .slice(0, 2)
-                        .map((part) => part.charAt(0).toUpperCase())
-                        .join("")}
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-heading text-[18px] font-bold text-text-dark">
-                          {update.author}
-                        </p>
-                        <span className="rounded-full bg-success-bg px-3 py-1 text-[11px] font-bold text-success">
-                          {update.role}
-                        </span>
+              {updatesData.length > 0 ? (
+                updatesData.map((update, index) => (
+                  <article
+                    key={update.id}
+                    className={`space-y-4 ${
+                      index !== updatesData.length - 1
+                        ? "border-b border-border pb-6"
+                        : ""
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-dark text-[15px] font-bold text-white">
+                        {poolOwnerName
+                          .split(/\s+/)
+                          .slice(0, 2)
+                          .map((part) => part.charAt(0).toUpperCase())
+                          .join("")}
                       </div>
-                      <p className="text-[14px] text-text-muted">{update.date}</p>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-heading text-[18px] font-bold text-text-dark">
+                            {update.author}
+                          </p>
+                          <span className="rounded-full bg-success-bg px-3 py-1 text-[11px] font-bold text-success">
+                            {update.role}
+                          </span>
+                        </div>
+                        <p className="text-[14px] text-text-muted">{update.date}</p>
+                      </div>
                     </div>
-                  </div>
 
-                  {update.imageEmoji && (
-                    <div className="flex h-[220px] items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#056a59_0%,#0b7a63_100%)] text-[48px]">
-                      {update.imageEmoji}
+                    <div className="space-y-3">
+                      <p className="text-[16px] leading-8 text-text-muted">
+                        {update.title}. {update.body}
+                      </p>
                     </div>
-                  )}
-
-                  <div className="space-y-3">
-                    <p className="text-[16px] leading-8 text-text-muted">
-                      {update.title}. {update.body}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {update.reactions.map((reaction) => (
-                      <button
-                        key={`${update.id}-${reaction.icon}`}
-                        type="button"
-                        className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[13px] font-semibold text-text-muted transition-colors hover:bg-gray-50"
-                      >
-                        <span aria-hidden="true">{reaction.icon}</span>
-                        {reaction.count}
-                      </button>
-                    ))}
-                  </div>
-                </article>
-              ))}
+                  </article>
+                ))
+              ) : (
+                <div className="rounded-[16px] border border-border bg-[#fbfcff] px-4 py-5 text-sm text-text-muted">
+                  No progress updates have been posted yet.
+                </div>
+              )}
             </div>
           </section>
 
@@ -716,50 +539,56 @@ export default function ImpactContributionPage() {
             </div>
 
             <div>
-              {recentContributorsData.map((contributor, index) => (
-                <div
-                  key={contributor.id}
-                  className={`flex items-center gap-3 px-5 py-4 sm:px-6 ${
-                    index < recentContributorsData.length - 1
-                      ? "border-b border-border"
-                      : ""
-                  }`}
-                >
+              {recentContributorsData.length > 0 ? (
+                recentContributorsData.map((contributor, index) => (
                   <div
-                    className={`flex h-11 w-11 items-center justify-center rounded-full text-[13px] font-bold text-white ${
-                      contributor.anonymous ? "text-text-muted" : ""
+                    key={contributor.id}
+                    className={`flex items-center gap-3 px-5 py-4 sm:px-6 ${
+                      index < recentContributorsData.length - 1
+                        ? "border-b border-border"
+                        : ""
                     }`}
-                    style={{
-                      backgroundColor: contributor.color,
-                    }}
                   >
-                    {contributor.initials}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate font-heading text-[16px] font-bold text-text-dark">
-                        {contributor.name}
-                      </p>
-                      {contributor.isYou && (
-                        <span className="rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-bold text-primary">
-                          You
-                        </span>
-                      )}
+                    <div
+                      className={`flex h-11 w-11 items-center justify-center rounded-full text-[13px] font-bold text-white ${
+                        contributor.anonymous ? "text-text-muted" : ""
+                      }`}
+                      style={{
+                        backgroundColor: contributor.color,
+                      }}
+                    >
+                      {contributor.initials}
                     </div>
-                    <p className="truncate text-[13px] text-text-muted">
-                      {contributor.handle}
-                    </p>
-                  </div>
 
-                  <div className="text-right">
-                    <p className="font-heading text-[16px] font-bold text-success">
-                      +{formatCurrency(contributor.amount)}
-                    </p>
-                    <p className="text-[12px] text-text-muted">{contributor.time}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate font-heading text-[16px] font-bold text-text-dark">
+                          {contributor.name}
+                        </p>
+                        {contributor.isYou && (
+                          <span className="rounded-full bg-primary-light px-2 py-0.5 text-[10px] font-bold text-primary">
+                            You
+                          </span>
+                        )}
+                      </div>
+                      <p className="truncate text-[13px] text-text-muted">
+                        {contributor.handle}
+                      </p>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="font-heading text-[16px] font-bold text-success">
+                        +{formatCurrency(contributor.amount)}
+                      </p>
+                      <p className="text-[12px] text-text-muted">{contributor.time}</p>
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="px-5 py-5 text-sm text-text-muted sm:px-6">
+                  No contributions have been recorded for this pool yet.
                 </div>
-              ))}
+              )}
             </div>
           </section>
         </div>
@@ -983,8 +812,7 @@ export default function ImpactContributionPage() {
             <div className="mt-4 grid grid-cols-3 gap-2.5">
               {[
                 ["Approvers", approversText],
-                ["Released", releasedValue],
-                ["Pending", pendingValue],
+                ["Withdrawals", withdrawalStatus],
               ].map(([label, value]) => (
                 <div
                   key={label}

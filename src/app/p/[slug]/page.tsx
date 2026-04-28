@@ -179,15 +179,14 @@ export default function PublicPoolPage() {
                 </div>
               ) : (
                 <>
-                  <button
-                    type="button"
+                  <Link
+                    href="/sign-in?next=%2Fimpact-contribution"
                     className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-primary px-10 py-4 text-[16px] font-bold text-white shadow-[0_8px_20px_rgba(51,94,255,0.24)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
-                    onClick={() => alert("Payment integration coming soon!")}
                   >
                     Contribute {formatCurrency(pool.perPersonAmount)}
-                  </button>
+                  </Link>
                   <p className="text-[12px] text-text-muted mt-4 font-medium">
-                    🔒 Secure payments powered by PoolFi
+                    Sign in to contribute securely from your PoolFi wallet.
                   </p>
                 </>
               )}

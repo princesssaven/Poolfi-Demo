@@ -1,9 +1,11 @@
-const { Keypair, Asset, TransactionBuilder, Horizon, Networks, Operation } = require('@stellar/stellar-sdk');
-const fs = require('fs');
-const env = fs.readFileSync('.env.local', 'utf-8').split('\n').find(line => line.startsWith('STELLAR_SECRET_KEY='));
-const secret = env ? env.split('=')[1].replace(/"/g, '') : null;
-
 async function main() {
+  const [{ Keypair, Asset, TransactionBuilder, Horizon, Networks, Operation }, fs] =
+    await Promise.all([import('@stellar/stellar-sdk'), import('node:fs')]);
+  const env = fs
+    .readFileSync('.env.local', 'utf-8')
+    .split('\n')
+    .find((line) => line.startsWith('STELLAR_SECRET_KEY='));
+  const secret = env ? env.split('=')[1].replace(/"/g, '') : null;
   const server = new Horizon.Server('https://horizon-testnet.stellar.org');
   if (!secret) throw new Error('STELLAR_SECRET_KEY not found in .env.local');
 

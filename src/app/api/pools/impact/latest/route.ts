@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDb, isDatabaseConfigured } from "@/src/lib/db";
 import { poolActivities, poolMembers, pools, users } from "@/src/lib/db/schema";
 
@@ -17,6 +17,27 @@ function buildOwnerName(owner: { firstName: string; lastName: string; pseudonym:
   }
 
   return pseudonym || "Creator";
+}
+
+function buildInitials(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join("") || "?"
+  );
+}
+
+function buildContributorColor(index: number, isAnonymous: boolean) {
+  if (isAnonymous) {
+    return "#d0d5dd";
+  }
+
+  return ["#3159f1", "#12b76a", "#7c3aed", "#0891b2", "#e11d48", "#16a34a"][
+    index % 6
+  ];
 }
 
 export async function GET() {
@@ -50,7 +71,6 @@ export async function GET() {
 
     const paidMembers = members.filter((member) => member.status === "paid");
     const contributorCount = paidMembers.length;
-    const raised = contributorCount * pool.perPersonAmount;
 
     const activities = await getDb()
       .select()
@@ -59,11 +79,105 @@ export async function GET() {
       .orderBy(desc(poolActivities.createdAt))
       .limit(5);
 
+    const contributionActivities = await getDb()
+      .select()
+      .from(poolActivities)
+      .where(
+        and(
+          eq(poolActivities.poolId, pool.id),
+          eq(poolActivities.kind, "member_paid")
+        )
+      )
+      .orderBy(desc(poolActivities.createdAt));
+
+    const contributorUserIds = contributionActivities
+      .map((activity) => activity.actorUserId)
+      .filter((userId): userId is string => Boolean(userId));
+
+    const contributorUsers = contributorUserIds.length
+      ? await getDb()
+          .select({
+            firstName: users.firstName,
+            id: users.id,
+            lastName: users.lastName,
+            pseudonym: users.pseudonym,
+          })
+          .from(users)
+          .where(inArray(users.id, contributorUserIds))
+      : [];
+    const contributorUsersById = new Map(
+      contributorUsers.map((user) => [user.id, user])
+    );
+
     const [owner] = await getDb()
       .select({ firstName: users.firstName, lastName: users.lastName, pseudonym: users.pseudonym })
       .from(users)
       .where(eq(users.id, pool.ownerId))
       .limit(1);
+
+    const contributionTotal = contributionActivities.reduce((total, activity) => {
+      const meta = activity.meta ?? {};
+      const amount =
+        typeof meta.amountNgn === "number" && Number.isFinite(meta.amountNgn)
+          ? meta.amountNgn
+          : 0;
+
+      return total + amount;
+    }, 0);
+    const fallbackRaised = contributorCount * pool.perPersonAmount;
+    const raised = contributionTotal > 0 ? contributionTotal : fallbackRaised;
+
+    const recentContributors =
+      contributionActivities.length > 0
+        ? contributionActivities.map((activity, index) => {
+            const meta = activity.meta ?? {};
+            const anonymous = meta.anonymous === true;
+            const user = activity.actorUserId
+              ? contributorUsersById.get(activity.actorUserId)
+              : undefined;
+            const displayName = anonymous
+              ? "Anonymous"
+              : buildOwnerName(user ?? null);
+            const amount =
+              typeof meta.amountNgn === "number" &&
+              Number.isFinite(meta.amountNgn)
+                ? meta.amountNgn
+                : pool.perPersonAmount;
+
+            return {
+              amount,
+              anonymous,
+              color: buildContributorColor(index, anonymous),
+              handle: anonymous
+                ? "Hidden contributor"
+                : user?.pseudonym
+                  ? `@${user.pseudonym}`
+                  : "Contributor",
+              id: activity.id,
+              initials: anonymous ? "?" : buildInitials(displayName),
+              name: displayName,
+              time: activity.createdAt.toISOString(),
+              userId: activity.actorUserId,
+            };
+          })
+        : paidMembers.map((member, index) => {
+            const anonymous = member.name.toLowerCase().includes("anonymous");
+            const displayName = anonymous ? "Anonymous" : member.name;
+
+            return {
+              amount: pool.perPersonAmount,
+              anonymous,
+              color: buildContributorColor(index, anonymous),
+              handle: anonymous
+                ? "Hidden contributor"
+                : member.customFieldValue || member.phone || "Contributor",
+              id: member.id,
+              initials: anonymous ? "?" : buildInitials(displayName),
+              name: displayName,
+              time: (member.paidAt ?? member.invitedAt).toISOString(),
+              userId: null,
+            };
+          });
 
     return NextResponse.json({
       data: {
@@ -87,6 +201,7 @@ export async function GET() {
           ...activity,
           createdAt: activity.createdAt.toISOString(),
         })),
+        recentContributors,
       },
     });
   } catch (error) {
