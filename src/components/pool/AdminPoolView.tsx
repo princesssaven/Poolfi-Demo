@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import svgPaths from "@/src/lib/design-system/svg-paths";
 
 interface PoolActivityItem {
@@ -51,6 +51,41 @@ export default function AdminPoolView({
   onCopyLink 
 }: AdminPoolViewProps) {
   const [filter, setFilter] = useState<"all" | "paid" | "pending">("all");
+  const [selectedMember, setSelectedMember] = useState<PoolMember | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const openDrawer = (member: PoolMember) => {
+    setSelectedMember(member);
+    setDrawerOpen(true);
+  };
+
+  const closeDrawer = () => {
+    setDrawerOpen(false);
+    setTimeout(() => setSelectedMember(null), 300);
+  };
+
+  useEffect(() => {
+    if (drawerOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [drawerOpen]);
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`https://poolfi-pre-mvpp.vercel.app${pool.poolLink}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* */ }
+  };
+
+  const handleWhatsApp = () => {
+    const msg = `Join my pool on PoolFi: https://poolfi-pre-mvpp.vercel.app${pool.poolLink}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
+  };
 
   const filteredMembers = pool.members.filter(m => {
     if (filter === "all") return true;
@@ -164,7 +199,7 @@ export default function AdminPoolView({
 
              <div className="divide-y divide-[#e5e8ef] max-h-[500px] overflow-y-auto">
                 {filteredMembers.map((member, idx) => (
-                   <div key={idx} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                   <div key={idx} onClick={() => openDrawer(member)} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
                       <div className="flex items-center gap-3">
                          <div 
                            className="size-9 rounded-full flex items-center justify-center text-white text-[13px] font-bold"
@@ -228,6 +263,122 @@ export default function AdminPoolView({
            </div>
         </div>
       </div>
+    </div>
+
+      {/* Slide-out Drawer Overlay */}
+      {selectedMember && (
+        <>
+          <div
+            className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${drawerOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+            onClick={closeDrawer}
+          />
+          <div
+            className={`fixed top-0 right-0 h-full w-full max-w-[420px] bg-white z-50 shadow-2xl transition-transform duration-300 ease-out overflow-y-auto ${drawerOpen ? "translate-x-0" : "translate-x-full"}`}
+          >
+            {/* Drawer Header */}
+            <div className="bg-[#1b4fd8] p-6 text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 size-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+              <button onClick={closeDrawer} className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 rounded-full size-8 flex items-center justify-center text-white transition-colors z-10">
+                ✕
+              </button>
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-3 text-white/60 uppercase text-[10px] font-bold tracking-widest">
+                  <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  Pool closes in
+                </div>
+                <p className="text-[28px] font-extrabold">{pool.daysLeft} days, {Math.floor(Math.random() * 24)} hrs</p>
+              </div>
+            </div>
+
+            {/* Pool Info Card */}
+            <div className="p-6 flex flex-col gap-5">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-[#6b7280] uppercase tracking-widest">
+                <span>🔒</span>
+                <span>{pool.category} · Private</span>
+              </div>
+              <h3 className="text-[20px] font-extrabold text-[#1a1f2e] leading-tight">{pool.title}</h3>
+              <p className="text-[13px] text-[#6b7280]">You've been invited to contribute</p>
+
+              {/* Detail Rows */}
+              <div className="flex flex-col gap-3 border-t border-[#e5e8ef] pt-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] text-[#6b7280]">Your contribution</span>
+                  <span className="text-[14px] font-bold text-[#1a1f2e]">{pool.perPerson} (Fixed)</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] text-[#6b7280]">Admin</span>
+                  <span className="text-[14px] font-bold text-[#1a1f2e]">{selectedMember.name}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] text-[#6b7280]">Deadline</span>
+                  <span className="text-[14px] font-bold text-[#1a1f2e]">{pool.closesDate}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[13px] text-[#6b7280]">Members so far</span>
+                  <span className="text-[14px] font-bold text-[#1a1f2e]">{pool.totalMembers} joined</span>
+                </div>
+              </div>
+
+              {/* Status Badge */}
+              <div className="flex items-center gap-2 bg-gray-50 rounded-xl p-3">
+                <div className="size-9 rounded-full flex items-center justify-center text-white text-[13px] font-bold" style={{ backgroundColor: selectedMember.bgColor }}>
+                  {selectedMember.initials}
+                </div>
+                <div className="flex-1">
+                  <p className="text-[14px] font-semibold text-[#1a1f2e]">{selectedMember.name}</p>
+                  <p className="text-[11px] text-[#6b7280]">{selectedMember.info}</p>
+                </div>
+                <div className={`text-[11px] font-bold px-3 py-1 rounded-full ${selectedMember.status === "paid" ? "bg-success-bg text-success" : "bg-orange-50 text-warning"}`}>
+                  {selectedMember.status === "paid" ? "Paid ✓" : "Pending"}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-2.5">
+                <button className="bg-[#eef3ff] text-[#1b4fd8] font-bold py-3.5 rounded-xl text-[14px] hover:bg-[#dde6ff] transition-colors">
+                  Join Pool (Pay Later)
+                </button>
+                <button className="bg-[#1b4fd8] text-white font-bold py-3.5 rounded-xl text-[14px] hover:bg-[#0f2fa8] transition-colors shadow-lg shadow-blue-500/20">
+                  Join & Pay Now – {pool.perPerson}
+                </button>
+                <p className="text-[11px] text-[#6b7280] text-center">Don't have an account? Sign up to join.</p>
+              </div>
+
+              {/* Info Box */}
+              <div className="bg-[#eef3ff] border border-[rgba(27,79,216,0.12)] p-4 rounded-xl">
+                <p className="text-[13px] font-semibold text-[#1340b8] mb-3">What happens when you join?</p>
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-[#1b4fd8] text-white size-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</div>
+                    <p className="text-[12px] text-[#1340b8]/80 leading-relaxed">The pool is saved in your My Pools tab — no link needed next time.</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="bg-[#1b4fd8] text-white size-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</div>
+                    <p className="text-[12px] text-[#1340b8]/80 leading-relaxed">You appear in the member list as Joined (Pending) so the admin knows you're aware.</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="bg-[#1b4fd8] text-white size-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</div>
+                    <p className="text-[12px] text-[#1340b8]/80 leading-relaxed">You can pay anytime before the deadline. The admin can send you a reminder if needed.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Share Section */}
+              <div className="flex flex-col gap-2.5 border-t border-[#e5e8ef] pt-4">
+                <p className="text-[13px] font-bold text-[#1a1f2e]">📣 Share this pool</p>
+                <button onClick={handleWhatsApp} className="flex items-center gap-3 p-3 border border-[#e5e8ef] rounded-xl hover:bg-gray-50 transition-colors w-full">
+                  <span className="text-lg">📲</span>
+                  <span className="text-[13px] font-semibold text-[#1a1f2e]">Share on WhatsApp</span>
+                </button>
+                <button onClick={handleCopyLink} className="flex items-center gap-3 p-3 border border-[#e5e8ef] rounded-xl hover:bg-gray-50 transition-colors w-full">
+                  <span className="text-lg">🔗</span>
+                  <span className="text-[13px] font-semibold text-[#1a1f2e]">{copied ? "Copied!" : "Copy Pool Link"}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
