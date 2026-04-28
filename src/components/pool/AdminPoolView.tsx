@@ -34,23 +34,40 @@ interface AdminPoolViewProps {
     members: PoolMember[];
     activities: PoolActivityItem[];
     poolLink: string;
+    settings?: {
+      autoReminders: boolean;
+      deadline: string;
+      paused: boolean;
+      perPersonAmount: string;
+      status: string;
+      takeAllAtClose: boolean;
+    };
   };
   onExportCsv: () => void;
   onSendReminders: () => void;
   onCopyLink: () => void;
+  onClosePool?: () => void;
+  onCancelPool?: () => void;
+  onPausePool?: () => void;
 }
 
 function formatCurrency(amount: number) {
   return `₦${amount.toLocaleString("en-NG")}`;
 }
 
+type AdminTab = "members" | "activity" | "settings" | "danger";
+
 export default function AdminPoolView({ 
   pool, 
   onExportCsv, 
   onSendReminders, 
-  onCopyLink 
+  onCopyLink,
+  onClosePool,
+  onCancelPool,
+  onPausePool,
 }: AdminPoolViewProps) {
   const [filter, setFilter] = useState<"all" | "paid" | "pending">("all");
+  const [activeTab, setActiveTab] = useState<AdminTab>("members");
   const [selectedMember, setSelectedMember] = useState<PoolMember | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -155,113 +172,199 @@ export default function AdminPoolView({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Progress Section */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          <section className="bg-white border border-[#e5e8ef] rounded-2xl overflow-hidden shadow-sm p-6">
-             <div className="flex justify-between items-center mb-6">
-                <div>
-                   <h2 className="text-[20px] font-extrabold text-[#1a1f2e]">{formatCurrency(pool.raised)} raised</h2>
-                   <p className="text-xs text-[#6b7280] mt-1">{pool.pendingCount} people yet to pay</p>
-                </div>
-                <div className="bg-[#eef3ff] text-[#1b4fd8] px-3 py-1 rounded-full text-[13px] font-bold">{progressPercentage}% funded</div>
-             </div>
-             <div className="h-2.5 w-full bg-[#f4f5f7] rounded-full overflow-hidden mb-2">
-                <div 
-                   className="h-full bg-gradient-to-r from-[#1b4fd8] to-[#5b8ef0] transition-all duration-1000 ease-out" 
-                   style={{ width: `${progressPercentage}%` }} 
-                />
-             </div>
-          </section>
+      {/* Progress Bar */}
+      <section className="bg-white border border-[#e5e8ef] rounded-2xl overflow-hidden shadow-sm p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-[20px] font-extrabold text-[#1a1f2e]">{formatCurrency(pool.raised)} raised</h2>
+            <p className="text-xs text-[#6b7280] mt-1">{pool.pendingCount} people yet to pay</p>
+          </div>
+          <div className="bg-[#eef3ff] text-[#1b4fd8] px-3 py-1 rounded-full text-[13px] font-bold">{progressPercentage}% funded</div>
+        </div>
+        <div className="h-2.5 w-full bg-[#f4f5f7] rounded-full overflow-hidden mb-2">
+          <div className="h-full bg-gradient-to-r from-[#1b4fd8] to-[#5b8ef0] transition-all duration-1000 ease-out" style={{ width: `${progressPercentage}%` }} />
+        </div>
+      </section>
 
-          {/* Members List Section */}
-          <section className="bg-white border border-[#e5e8ef] rounded-2xl overflow-hidden shadow-sm flex flex-col">
-             <div className="p-5 border-b border-[#e5e8ef] flex items-center justify-between bg-gray-50/50">
-                <div className="flex items-center gap-3">
-                   <h3 className="font-bold text-[#1a1f2e] text-[15px]">Contributors</h3>
-                   <div className="flex gap-1.5">
-                      <span className="bg-[#f4f5f7] text-[#12b76a] text-[10px] font-bold px-2 py-0.5 rounded-full">{pool.paidCount} Paid</span>
-                      <span className="bg-[#f4f5f7] text-[#f79009] text-[10px] font-bold px-2 py-0.5 rounded-full">{pool.pendingCount} Pending</span>
-                   </div>
-                </div>
-                <div className="flex bg-[#f4f5f7] p-1 rounded-full text-[12px] font-semibold">
-                   {(["all", "paid", "pending"] as const).map((f) => (
-                      <button
-                         key={f}
-                         onClick={() => setFilter(f)}
-                         className={`px-4 py-1 rounded-full transition-all ${filter === f ? "bg-white text-[#1b4fd8] shadow-sm" : "text-[#6b7280]"}`}
-                      >
-                         {f.charAt(0).toUpperCase() + f.slice(1)}
-                      </button>
-                   ))}
-                </div>
-             </div>
-
-             <div className="divide-y divide-[#e5e8ef] max-h-[500px] overflow-y-auto">
-                {filteredMembers.map((member, idx) => (
-                   <div key={idx} onClick={() => openDrawer(member)} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
-                      <div className="flex items-center gap-3">
-                         <div 
-                           className="size-9 rounded-full flex items-center justify-center text-white text-[13px] font-bold"
-                           style={{ backgroundColor: member.bgColor }}
-                         >
-                            {member.initials}
-                         </div>
-                         <div>
-                            <p className="text-[14px] font-semibold text-[#1a1f2e]">{member.name}</p>
-                            <p className="text-[11px] text-[#6b7280]">{member.info}</p>
-                         </div>
-                      </div>
-                      <div className={`text-[11px] font-bold px-3 py-1 rounded-full ${
-                         member.status === "paid" ? "bg-success-bg text-success" : "bg-orange-50 text-warning"
-                      }`}>
-                         {member.status === "paid" ? "Paid ✓" : "Pending"}
-                      </div>
-                   </div>
-                ))}
-                {filteredMembers.length === 0 && (
-                   <div className="p-12 text-center text-[#6b7280] text-sm">
-                      No members found matching this filter.
-                   </div>
-                )}
-             </div>
-          </section>
+      {/* Tabs */}
+      <div className="bg-white border border-[#e5e8ef] rounded-2xl overflow-hidden shadow-sm">
+        <div className="flex border-b border-[#e5e8ef]">
+          {(["members", "activity", "settings", "danger"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-3.5 text-[13px] font-bold transition-colors relative ${
+                activeTab === tab
+                  ? tab === "danger" ? "text-[#dc2626]" : "text-[#1b4fd8]"
+                  : "text-[#6b7280] hover:text-[#1a1f2e]"
+              }`}
+            >
+              {tab === "members" ? `Members (${pool.totalMembers})` : tab === "activity" ? "Activity" : tab === "settings" ? "Settings" : "Danger Zone"}
+              {activeTab === tab && (
+                <div className={`absolute bottom-0 left-0 right-0 h-[2px] ${tab === "danger" ? "bg-[#dc2626]" : "bg-[#1b4fd8]"}`} />
+              )}
+            </button>
+          ))}
         </div>
 
-        {/* Sidebar / Actions Column */}
-        <div className="flex flex-col gap-6">
-           {/* Reminder Card */}
-           <div className="bg-[#eef3ff] border border-[rgba(27,79,216,0.12)] p-6 rounded-2xl flex flex-col gap-4 shadow-sm">
-              <div className="flex items-center gap-2">
-                 <span className="text-xl">📣</span>
-                 <h3 className="text-[14px] font-bold text-[#1a1f2e]">Send Reminders</h3>
+        {/* Members Tab */}
+        {activeTab === "members" && (
+          <div>
+            <div className="p-4 border-b border-[#e5e8ef] flex items-center justify-between bg-gray-50/50">
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1.5">
+                  <span className="bg-[#f4f5f7] text-[#12b76a] text-[10px] font-bold px-2 py-0.5 rounded-full">{pool.paidCount} Paid</span>
+                  <span className="bg-[#f4f5f7] text-[#f79009] text-[10px] font-bold px-2 py-0.5 rounded-full">{pool.pendingCount} Pending</span>
+                </div>
               </div>
-              <p className="text-[12px] text-[#1340b8]/80 leading-relaxed">
-                Send a notification to all {pool.pendingCount} pending members who haven't contributed yet.
-              </p>
-              <button 
-                onClick={onSendReminders}
-                className="bg-[#1b4fd8] text-white font-bold py-3 rounded-xl text-[13px] hover:bg-[#0f2fa8] transition-colors shadow-lg shadow-blue-500/20"
-              >
-                Send Group Reminder
-              </button>
-           </div>
+              <div className="flex bg-[#f4f5f7] p-1 rounded-full text-[12px] font-semibold">
+                {(["all", "paid", "pending"] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`px-4 py-1 rounded-full transition-all ${filter === f ? "bg-white text-[#1b4fd8] shadow-sm" : "text-[#6b7280]"}`}
+                  >
+                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="divide-y divide-[#e5e8ef] max-h-[500px] overflow-y-auto">
+              {filteredMembers.map((member, idx) => (
+                <div key={idx} onClick={() => openDrawer(member)} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <div className="size-9 rounded-full flex items-center justify-center text-white text-[13px] font-bold" style={{ backgroundColor: member.bgColor }}>
+                      {member.initials}
+                    </div>
+                    <div>
+                      <p className="text-[14px] font-semibold text-[#1a1f2e]">{member.name}</p>
+                      <p className="text-[11px] text-[#6b7280]">{member.info}</p>
+                    </div>
+                  </div>
+                  <div className={`text-[11px] font-bold px-3 py-1 rounded-full ${member.status === "paid" ? "bg-success-bg text-success" : "bg-orange-50 text-warning"}`}>
+                    {member.status === "paid" ? "Paid ✓" : "Pending"}
+                  </div>
+                </div>
+              ))}
+              {filteredMembers.length === 0 && (
+                <div className="p-12 text-center text-[#6b7280] text-sm">No members found matching this filter.</div>
+              )}
+            </div>
+          </div>
+        )}
 
-           {/* Quick Settings / Link Share */}
-           <div className="bg-white border border-[#e5e8ef] p-6 rounded-2xl flex flex-col gap-4 shadow-sm">
+        {/* Activity Tab */}
+        {activeTab === "activity" && (
+          <div className="divide-y divide-[#e5e8ef] max-h-[500px] overflow-y-auto">
+            {pool.activities.length > 0 ? pool.activities.map((activity, idx) => (
+              <div key={idx} className="p-4 flex items-start gap-3">
+                <div className="size-2.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: activity.dotColor }} />
+                <div className="flex-1">
+                  <p className={`text-[13px] text-[#1a1f2e] ${activity.isBold ? "font-bold" : ""}`}>{activity.mainText}</p>
+                  <p className="text-[11px] text-[#6b7280] mt-0.5">{activity.timeText}</p>
+                </div>
+              </div>
+            )) : (
+              <div className="p-12 text-center text-[#6b7280] text-sm">No activity yet.</div>
+            )}
+          </div>
+        )}
+
+        {/* Settings Tab */}
+        {activeTab === "settings" && (
+          <div className="p-6 flex flex-col gap-5">
+            <div className="flex flex-col gap-4">
+              <h3 className="text-[15px] font-bold text-[#1a1f2e]">⚙️ Pool Settings</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-[#f4f5f7] rounded-xl p-4">
+                  <p className="text-[11px] font-bold text-[#6b7280] uppercase tracking-widest mb-1">Per Person Amount</p>
+                  <p className="text-[16px] font-bold text-[#1a1f2e]">{pool.settings?.perPersonAmount || pool.perPerson}</p>
+                </div>
+                <div className="bg-[#f4f5f7] rounded-xl p-4">
+                  <p className="text-[11px] font-bold text-[#6b7280] uppercase tracking-widest mb-1">Deadline</p>
+                  <p className="text-[16px] font-bold text-[#1a1f2e]">{pool.settings?.deadline || pool.closesDate}</p>
+                </div>
+                <div className="bg-[#f4f5f7] rounded-xl p-4">
+                  <p className="text-[11px] font-bold text-[#6b7280] uppercase tracking-widest mb-1">Status</p>
+                  <p className="text-[16px] font-bold text-[#1a1f2e] capitalize">{pool.settings?.status || "active"}</p>
+                </div>
+                <div className="bg-[#f4f5f7] rounded-xl p-4">
+                  <p className="text-[11px] font-bold text-[#6b7280] uppercase tracking-widest mb-1">Auto Reminders</p>
+                  <p className="text-[16px] font-bold text-[#1a1f2e]">{pool.settings?.autoReminders ? "On" : "Off"}</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between bg-[#f4f5f7] rounded-xl p-4">
+                <div>
+                  <p className="text-[13px] font-bold text-[#1a1f2e]">Take All at Close</p>
+                  <p className="text-[11px] text-[#6b7280]">Withdraw all funds when pool closes</p>
+                </div>
+                <span className={`text-[12px] font-bold px-3 py-1 rounded-full ${pool.settings?.takeAllAtClose ? "bg-success-bg text-success" : "bg-[#f4f5f7] text-[#6b7280] border border-[#e5e8ef]"}`}>
+                  {pool.settings?.takeAllAtClose ? "Enabled" : "Disabled"}
+                </span>
+              </div>
+            </div>
+
+            {/* Reminder Card */}
+            <div className="bg-[#eef3ff] border border-[rgba(27,79,216,0.12)] p-5 rounded-xl flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📣</span>
+                <h3 className="text-[14px] font-bold text-[#1a1f2e]">Send Reminders</h3>
+              </div>
+              <p className="text-[12px] text-[#1340b8]/80 leading-relaxed">Send a notification to all {pool.pendingCount} pending members.</p>
+              <button onClick={onSendReminders} className="bg-[#1b4fd8] text-white font-bold py-3 rounded-xl text-[13px] hover:bg-[#0f2fa8] transition-colors shadow-lg shadow-blue-500/20">Send Group Reminder</button>
+            </div>
+
+            {/* Pool Link */}
+            <div className="border border-[#e5e8ef] p-5 rounded-xl flex flex-col gap-3">
               <h3 className="text-[14px] font-bold text-[#1a1f2e]">🔗 Pool Link</h3>
               <div className="bg-[#f4f5f7] p-3 rounded-xl flex items-center justify-between gap-3">
-                 <span className="text-[12px] font-medium text-[#1a1f2e] truncate">{pool.poolLink.replace("/p/", "poolfi.app/")}</span>
-                 <button 
-                    onClick={onCopyLink}
-                    className="bg-[#1b4fd8] text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0"
-                 >
-                    Copy
-                 </button>
+                <span className="text-[12px] font-medium text-[#1a1f2e] truncate">{pool.poolLink.replace("/p/", "poolfi.app/")}</span>
+                <button onClick={onCopyLink} className="bg-[#1b4fd8] text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0">Copy</button>
               </div>
-              <p className="text-[11px] text-[#6b7280]">Share this link with your members so they can contribute directly from their wallets.</p>
-           </div>
-        </div>
+            </div>
+          </div>
+        )}
+
+        {/* Danger Zone Tab */}
+        {activeTab === "danger" && (
+          <div className="p-6 flex flex-col gap-5">
+            {/* Pool Controls */}
+            <div className="border-2 border-[#dc2626]/20 rounded-xl p-5 bg-red-50/50">
+              <h3 className="text-[15px] font-bold text-[#dc2626] mb-1">⚠ Pool Controls</h3>
+              <p className="text-[12px] text-[#6b7280] mb-4">Use these carefully. Closing the pool releases funds. Cancelling returns all contributions.</p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={onClosePool}
+                  className="bg-[#1b4fd8] text-white font-bold py-3 rounded-xl text-[13px] hover:bg-[#0f2fa8] transition-colors flex items-center justify-center gap-2"
+                >
+                  ✅ Close Pool &amp; Withdraw
+                </button>
+                <button
+                  onClick={onCancelPool}
+                  className="border-2 border-[#dc2626]/30 text-[#dc2626] font-bold py-3 rounded-xl text-[13px] hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  ✕ Cancel Pool &amp; Refund All
+                </button>
+              </div>
+            </div>
+
+            {/* Pause Contributions */}
+            <div className="border-2 border-[#f79009]/20 rounded-xl p-5 bg-orange-50/50">
+              <h3 className="text-[15px] font-bold text-[#f79009] mb-1">Pause contributions</h3>
+              <p className="text-[12px] text-[#6b7280] mb-4">Temporarily stop accepting new contributions. Existing contributions are safe.</p>
+              <button
+                onClick={onPausePool}
+                className={`w-full font-bold py-3 rounded-xl text-[13px] transition-colors ${
+                  pool.settings?.paused
+                    ? "bg-[#12b76a] text-white hover:bg-[#0f9e5c]"
+                    : "bg-[#f79009] text-white hover:bg-[#e07f08]"
+                }`}
+              >
+                {pool.settings?.paused ? "Resume contributions" : "Pause contributions"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Slide-out Drawer Overlay */}

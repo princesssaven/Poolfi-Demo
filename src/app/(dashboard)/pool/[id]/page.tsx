@@ -172,10 +172,14 @@ export default function PoolDashboardPage() {
           members: pool.members,
           activities: pool.activities,
           poolLink: pool.poolLink,
+          settings: pool.settings,
         }}
         onExportCsv={handleExportCsv}
         onSendReminders={handleSendReminders}
         onCopyLink={copyPoolLink}
+        onClosePool={() => setSuccessMessage("Close pool feature coming soon.")}
+        onCancelPool={() => setSuccessMessage("Cancel pool feature coming soon.")}
+        onPausePool={() => setSuccessMessage("Pause pool feature coming soon.")}
       />
     </div>
   );
