@@ -19,12 +19,7 @@ export default function PoolLiveSuccess({
 }: PoolLiveSuccessProps) {
   const [copied, setCopied] = useState(false);
 
-  const getFullUrl = () => {
-    if (typeof window !== "undefined") {
-      return `${window.location.origin}${poolLink}`;
-    }
-    return poolLink;
-  };
+  const getFullUrl = () => `https://poolfi-pre-mvpp.vercel.app${poolLink}`;
 
   const handleCopy = async () => {
     try {
@@ -66,40 +61,38 @@ export default function PoolLiveSuccess({
           </p>
         </div>
 
-        <div className="mt-10 rounded-[24px] border border-[#e5ebf6] bg-bg-page p-3 sm:p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="min-w-0 flex-1 px-4 py-4 text-center sm:px-8 sm:py-6">
-              <span className="block truncate font-heading text-[20px] font-bold tracking-[-0.4px] text-text-dark sm:text-[26px]">
+        <div className="mt-10 rounded-[32px] border border-[#e5ebf6] bg-white p-4 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+            <div className="min-w-0 flex-1 rounded-[22px] border border-[#e5ebf6] bg-[#f8fafc] px-5 py-5 text-center sm:px-6 sm:py-6 lg:text-left">
+              <span className="block break-words font-heading text-[20px] font-bold leading-tight text-text-dark sm:text-[22px]">
                 {getFullUrl()}
               </span>
             </div>
             <button
               type="button"
               onClick={handleCopy}
-              className="flex h-[62px] shrink-0 items-center justify-center rounded-[18px] bg-primary px-8 text-[18px] font-bold text-white shadow-[0_10px_24px_rgba(51,94,255,0.24)] transition-colors hover:bg-primary-dark lg:min-w-[204px]"
+              className="flex h-[62px] min-w-[180px] items-center justify-center rounded-[22px] bg-primary px-6 text-[18px] font-semibold text-white shadow-[0_12px_28px_rgba(51,94,255,0.22)] transition-colors hover:bg-primary-dark"
             >
               {copied ? "Copied!" : "Copy Link"}
             </button>
           </div>
         </div>
 
-        <div className="mt-10 border-t border-border pt-8">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <button
-              type="button"
-              onClick={handleWhatsappShare}
-              className="flex h-[88px] items-center justify-center rounded-[22px] border border-border bg-white px-6 text-[18px] font-semibold text-text-muted transition-colors hover:bg-gray-50"
-            >
-              Share on Whatsapp
-            </button>
-            <button
-              type="button"
-              onClick={onBackToDashboard}
-              className="flex h-[88px] items-center justify-center rounded-[22px] bg-primary px-6 text-[18px] font-bold text-white shadow-[0_12px_28px_rgba(51,94,255,0.25)] transition-colors hover:bg-primary-dark"
-            >
-              Back to Dashboard
-            </button>
-          </div>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={handleWhatsappShare}
+            className="flex h-[68px] items-center justify-center rounded-[22px] border border-[#d8e4ff] bg-white px-6 text-[16px] font-semibold text-text-dark transition-colors hover:bg-gray-50"
+          >
+            Share on Whatsapp
+          </button>
+          <button
+            type="button"
+            onClick={onBackToDashboard}
+            className="flex h-[68px] items-center justify-center rounded-[22px] bg-primary px-6 text-[16px] font-semibold text-white shadow-[0_12px_28px_rgba(51,94,255,0.25)] transition-colors hover:bg-primary-dark"
+          >
+            Back to Dashboard
+          </button>
         </div>
       </div>
     </Modal>

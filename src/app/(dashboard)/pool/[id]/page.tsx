@@ -261,7 +261,7 @@ export default function PoolDashboardPage() {
     }
 
     try {
-      const fullUrl = `${window.location.origin}${pool.poolLink}`;
+      const fullUrl = `https://poolfi-pre-mvpp.vercel.app${pool.poolLink}`;
       await navigator.clipboard.writeText(fullUrl);
       setSuccessMessage("Pool link copied.");
     } catch {

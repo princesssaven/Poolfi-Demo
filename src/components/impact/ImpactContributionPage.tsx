@@ -105,6 +105,10 @@ function truncateSentence(message: string) {
   return sentence.length > 65 ? `${sentence.slice(0, 62)}...` : sentence;
 }
 
+function formatNumberWithCommas(value: string) {
+  return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 export default function ImpactContributionPage() {
   const [selectedAmount, setSelectedAmount] = useState(1000);
   const [customAmountText, setCustomAmountText] = useState("");
@@ -125,7 +129,11 @@ export default function ImpactContributionPage() {
   const [insufficientBalance, setInsufficientBalance] = useState(false);
   const [shareStatus, setShareStatus] = useState("");
 
-  const getPoolUrl = () => window.location.href;
+  const getPoolUrl = () => {
+    const path = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    return `https://poolfi-pre-mvpp.vercel.app${path}`;
+  };
+
   const getShareMessage = () => {
     const description = poolDescription ? `${poolDescription} ` : "";
     return `Support ${poolTitle} on PoolFi! ${description}${getPoolUrl()}`;
@@ -672,7 +680,7 @@ export default function ImpactContributionPage() {
                 <input
                   type="text"
                   inputMode="numeric"
-                  value={customAmountText}
+                  value={customAmountText ? formatNumberWithCommas(customAmountText) : ""}
                   onChange={(e) => {
                     const raw = e.target.value.replace(/[^0-9]/g, "");
                     setCustomAmountText(raw);

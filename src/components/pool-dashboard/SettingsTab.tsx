@@ -99,7 +99,7 @@ export default function SettingsTab({
     }
 
     try {
-      const fullUrl = `${window.location.origin}${poolLink}`;
+      const fullUrl = `https://poolfi-pre-mvpp.vercel.app${poolLink}`;
       await navigator.clipboard.writeText(fullUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
