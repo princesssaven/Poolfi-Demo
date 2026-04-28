@@ -181,13 +181,8 @@ export default function SettingsPage() {
                 <input
                   type="text"
                   value={formState.pseudonym}
-                  onChange={(event) =>
-                    updateField(
-                      "pseudonym",
-                      event.target.value.replace(/[^a-zA-Z0-9_]/g, "").slice(0, 20)
-                    )
-                  }
-                  className="rounded-[12px] border border-border bg-white px-4 py-3 text-sm text-text-dark outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/10"
+                  disabled
+                  className="rounded-[12px] border border-border bg-[#f8fafc] px-4 py-3 text-sm text-text-muted outline-none"
                   required
                 />
               </div>
