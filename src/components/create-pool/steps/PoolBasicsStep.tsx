@@ -2,6 +2,8 @@
 
 import PoolBasicsIcon from "@/src/assets/icons/pool-basics.svg";
 import CalendarIcon from "@/src/assets/icons/calendar.svg";
+import { formatNumberWithCommas } from "@/src/lib/format-utils";
+import DatePicker from "@/src/components/ui/DatePicker";
 
 interface PoolBasicsData {
   name: string;
@@ -94,7 +96,7 @@ export default function PoolBasicsStep({
               <input
                 type="text"
                 value={data.targetAmount}
-                onChange={(e) => update("targetAmount", e.target.value)}
+                onChange={(e) => update("targetAmount", formatNumberWithCommas(e.target.value))}
                 placeholder="400,000"
                 className="flex-1 px-3 py-3 text-sm font-card text-text-dark placeholder:text-gray-300 focus:outline-none"
               />
@@ -113,7 +115,7 @@ export default function PoolBasicsStep({
               <input
                 type="text"
                 value={data.perPerson}
-                onChange={(e) => update("perPerson", e.target.value)}
+                onChange={(e) => update("perPerson", formatNumberWithCommas(e.target.value))}
                 placeholder="1,000"
                 className="flex-1 px-3 py-3 text-sm font-card text-text-dark placeholder:text-gray-300 focus:outline-none"
               />
@@ -127,29 +129,21 @@ export default function PoolBasicsStep({
             <label className="text-[13px] font-semibold text-text-dark font-card">
               Start Date
             </label>
-            <div className="flex items-center border border-border rounded-[10px] px-4 py-3">
-              <input
-                type="date"
-                value={data.startDate}
-                onChange={(e) => update("startDate", e.target.value)}
-                className="flex-1 text-sm font-card text-text-dark focus:outline-none bg-transparent"
-              />
-              <CalendarIcon className="w-3 h-3 text-text-dark shrink-0" />
-            </div>
+            <DatePicker
+              value={data.startDate}
+              onChange={(v) => update("startDate", v)}
+              placeholder="Select start date"
+            />
           </div>
           <div className="flex-1 flex flex-col gap-[7px]">
             <label className="text-[13px] font-semibold text-text-dark font-card">
               Deadline
             </label>
-            <div className="flex items-center border border-border rounded-[10px] px-4 py-3">
-              <input
-                type="date"
-                value={data.deadline}
-                onChange={(e) => update("deadline", e.target.value)}
-                className="flex-1 text-sm font-card text-text-dark focus:outline-none bg-transparent"
-              />
-              <CalendarIcon className="w-3 h-3 text-text-dark shrink-0" />
-            </div>
+            <DatePicker
+              value={data.deadline}
+              onChange={(v) => update("deadline", v)}
+              placeholder="Select deadline"
+            />
           </div>
         </div>
 

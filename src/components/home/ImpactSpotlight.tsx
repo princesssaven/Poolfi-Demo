@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { formatCurrency } from "@/src/lib/format-utils";
 
 interface FeaturedPool {
   title: string;
@@ -12,10 +13,6 @@ interface ImpactSpotlightProps {
   pool: FeaturedPool | null;
 }
 
-function formatCurrency(amount: number): string {
-  const safeAmount = Number.isFinite(amount) ? amount : 0;
-  return `₦${safeAmount.toLocaleString("en-NG")}`;
-}
 
 export default function ImpactSpotlight({ pool }: ImpactSpotlightProps) {
   const safeRaised = pool && Number.isFinite(pool.raised) ? pool.raised : 0;

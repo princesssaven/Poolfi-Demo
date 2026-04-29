@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import svgPaths from "@/src/lib/design-system/svg-paths";
+import { formatNumberWithCommas } from "@/src/lib/format-utils";
 
 interface PoolActivityItem {
   dotColor: string;
@@ -53,7 +54,7 @@ interface AdminPoolViewProps {
 }
 
 function formatCurrency(amount: number) {
-  return `₦${amount.toLocaleString("en-NG")}`;
+  return `₦${formatNumberWithCommas(amount)}`;
 }
 
 type AdminTab = "members" | "activity" | "settings" | "danger";
@@ -278,7 +279,11 @@ export default function AdminPoolView({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-[#f4f5f7] rounded-xl p-4">
                   <p className="text-[11px] font-bold text-[#6b7280] uppercase tracking-widest mb-1">Per Person Amount</p>
-                  <p className="text-[16px] font-bold text-[#1a1f2e]">{pool.settings?.perPersonAmount || pool.perPerson}</p>
+                  <p className="text-[16px] font-bold text-[#1a1f2e]">
+                    {pool.settings?.perPersonAmount 
+                      ? `₦${formatNumberWithCommas(pool.settings.perPersonAmount)}` 
+                      : pool.perPerson}
+                  </p>
                 </div>
                 <div className="bg-[#f4f5f7] rounded-xl p-4">
                   <p className="text-[11px] font-bold text-[#6b7280] uppercase tracking-widest mb-1">Deadline</p>

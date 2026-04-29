@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import Toggle from "@/src/components/ui/Toggle";
 import AddMoneyModal from "@/src/components/create-pool/AddMoneyModal";
+import { formatNumberWithCommas } from "@/src/lib/format-utils";
 
 interface ContributorItem {
   id: string;
@@ -74,7 +75,7 @@ interface ImpactContributionDetails {
 const contributionOptions = [500, 1000, 2000, 5000];
 
 function formatCurrency(amount: number) {
-  return `₦${amount.toLocaleString("en-NG")}`;
+  return `₦${formatNumberWithCommas(amount)}`;
 }
 
 function formatRelativeTime(value: string) {
@@ -105,9 +106,6 @@ function truncateSentence(message: string) {
   return sentence.length > 65 ? `${sentence.slice(0, 62)}...` : sentence;
 }
 
-function formatNumberWithCommas(value: string) {
-  return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
 
 export default function ImpactContributionPage() {
   const [selectedAmount, setSelectedAmount] = useState(1000);

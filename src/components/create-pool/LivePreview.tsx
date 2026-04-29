@@ -3,6 +3,7 @@
 import EyeIcon from "@/src/assets/icons/eye.svg";
 import PreviewGearIcon from "@/src/assets/icons/preview-gear.svg";
 import BulbIcon from "@/src/assets/icons/bulb.svg";
+import { formatNumberWithCommas } from "@/src/lib/format-utils";
 
 interface LivePreviewProps {
   poolName?: string;
@@ -72,7 +73,7 @@ export default function LivePreview({
                 Target
               </p>
               <p className="font-heading text-[15px] font-bold text-text-dark mt-1">
-                {target ? `₦${target}` : "₦—"}
+                {target ? `₦${formatNumberWithCommas(target)}` : "₦—"}
               </p>
             </div>
             <div className="flex-1 bg-bg-page rounded-[10px] p-3">
@@ -80,7 +81,7 @@ export default function LivePreview({
                 Per Person
               </p>
               <p className="font-heading text-[15px] font-bold text-text-dark mt-1">
-                {perPerson ? `₦${perPerson}` : "₦—"}
+                {perPerson ? `₦${formatNumberWithCommas(perPerson)}` : "₦—"}
               </p>
             </div>
           </div>

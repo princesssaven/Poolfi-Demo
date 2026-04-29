@@ -1,4 +1,5 @@
 "use client";
+import { formatCurrency } from "@/src/lib/format-utils";
 
 interface BalanceCardProps {
   totalBalance: number;
@@ -9,12 +10,6 @@ interface BalanceCardProps {
   onAddFunds?: () => void;
 }
 
-function formatCurrency(amount: number): string {
-  return `₦${amount.toLocaleString("en-NG", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
 
 export default function BalanceCard({
   totalBalance,
@@ -35,7 +30,7 @@ export default function BalanceCard({
         <div>
           <p className="mb-1 text-[12px] text-white/70">Your PoolFi Balance</p>
           <p className="font-heading text-[30px] font-bold leading-[34px] tracking-[-1.5px] text-white sm:text-[38px] sm:leading-[42px] sm:tracking-[-2px]">
-            {formatCurrency(totalBalance)}
+            {formatCurrency(totalBalance, 2)}
           </p>
           <p className="mt-1 text-[11px] font-medium uppercase tracking-[1px] text-white/50">
             Total Balance
@@ -65,7 +60,7 @@ export default function BalanceCard({
             </span>
           </div>
           <p className="font-heading text-xl font-bold tracking-[-0.5px] text-emerald-light">
-            {formatCurrency(available)}
+            {formatCurrency(available, 2)}
           </p>
           <p className="mt-1 text-[11px] text-white/45">Free to use</p>
         </div>
@@ -78,7 +73,7 @@ export default function BalanceCard({
             </span>
           </div>
           <p className="font-heading text-xl font-bold tracking-[-0.5px] text-yellow">
-            {formatCurrency(locked)}
+            {formatCurrency(locked, 2)}
           </p>
           <p className="mt-1 text-[11px] text-white/45">
             In {activePools} active pool{activePools !== 1 ? "s" : ""}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { formatCurrency } from "@/src/lib/format-utils";
 
 interface PoolSummary {
   id: string;
@@ -19,9 +20,6 @@ interface YourPoolsProps {
   pools: PoolSummary[];
 }
 
-function formatCurrency(amount: number): string {
-  return `₦${amount.toLocaleString("en-NG")}`;
-}
 
 function AnimatedProgressBar({ raised, target }: { raised: number; target: number }) {
   const targetPercentage = Math.min(Math.round((raised / target) * 100), 100);
