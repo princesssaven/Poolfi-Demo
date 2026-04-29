@@ -153,7 +153,7 @@ export const poolMembers = pgTable("pool_members", {
   phone: text("phone").notNull().default(""),
   customFieldValue: text("custom_field_value").notNull().default(""),
   contributorUserId: text("contributor_user_id"),
-  status: text("status").notNull().default("pending"),
+  status: text("status").notNull().default("expected"),
   invitedAt: timestamp("invited_at", { withTimezone: true }).notNull().defaultNow(),
   paidAt: timestamp("paid_at", { withTimezone: true }),
 });

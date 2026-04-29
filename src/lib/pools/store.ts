@@ -135,11 +135,13 @@ function buildPoolSlug(name: string) {
 
 function getPoolMetrics(pool: DatabasePool, members: DatabasePoolMember[]) {
   const paidCount = members.filter((member) => member.status === "paid").length;
+  const expectedCount = members.filter((member) => member.status === "expected").length;
   const totalMembers = members.length;
-  const pendingCount = Math.max(totalMembers - paidCount, 0);
+  const pendingCount = Math.max(totalMembers - paidCount - expectedCount, 0);
   const raised = paidCount * pool.perPersonAmount;
 
   return {
+    expectedCount,
     paidCount,
     pendingCount,
     raised,
@@ -642,11 +644,14 @@ export async function getPoolDashboardViewData(poolId: string, ownerId: string) 
           ? `${member.customFieldValue || member.phone || "Member"} · Paid ${formatDate(
               member.paidAt
             )}`
-          : `${member.customFieldValue || member.phone || "Member"} · Pending`,
+          : member.status === "expected"
+            ? `${member.customFieldValue || member.phone || "Member"} · Expected`
+            : `${member.customFieldValue || member.phone || "Member"} · Pending`,
       initials: buildInitials(member.name),
       name: member.name,
-      status: member.status === "paid" ? "paid" : "pending",
+      status: member.status === "paid" ? "paid" : member.status === "expected" ? "expected" : "pending",
     })),
+    expectedCount: metrics.expectedCount,
     paidCount: metrics.paidCount,
     pendingCount: metrics.pendingCount,
     perPerson: `${formatCurrency(pool.perPersonAmount)} per person`,
@@ -901,18 +906,36 @@ export async function contributeToPool(input: {
     })
     .where(eq(users.id, input.userId));
 
-  // 5. Add contributor as a paid pool member
+  // 5. Mark contributor as paid (update existing or insert new)
   const displayName = input.anonymous ? "Anonymous Contributor" : input.userName;
 
-  await db.insert(poolMembers).values({
-    poolId: input.poolId,
-    name: displayName,
-    phone: "",
-    customFieldValue: "", // This is now separate from the user ID
-    contributorUserId: input.userId,
-    status: "paid",
-    paidAt: new Date(),
-  });
+  const [existingMember] = await db
+    .select()
+    .from(poolMembers)
+    .where(
+      and(
+        eq(poolMembers.poolId, input.poolId),
+        eq(poolMembers.contributorUserId, input.userId)
+      )
+    )
+    .limit(1);
+
+  if (existingMember) {
+    await db
+      .update(poolMembers)
+      .set({ status: "paid", paidAt: new Date(), name: displayName })
+      .where(eq(poolMembers.id, existingMember.id));
+  } else {
+    await db.insert(poolMembers).values({
+      poolId: input.poolId,
+      name: displayName,
+      phone: "",
+      customFieldValue: "",
+      contributorUserId: input.userId,
+      status: "paid",
+      paidAt: new Date(),
+    });
+  }
 
   // 6. Log activity + notification
   const contributionLabel = formatCurrency(input.amountNgn);
@@ -952,4 +975,78 @@ export async function contributeToPool(input: {
     newBalanceNgn: updatedBalanceNgn,
     contributedNgn: input.amountNgn,
   } as const;
+}
+
+export async function joinPoolPayLater(input: {
+  userId: string;
+  userName: string;
+  poolId: string;
+}) {
+  const db = getDb();
+
+  const [pool] = await db
+    .select()
+    .from(pools)
+    .where(eq(pools.id, input.poolId))
+    .limit(1);
+
+  if (!pool) {
+    return { success: false, error: "Pool not found." } as const;
+  }
+
+  if (pool.status !== "active") {
+    return { success: false, error: "This pool is no longer accepting members." } as const;
+  }
+
+  // Check if user is already a member
+  const [existingMember] = await db
+    .select()
+    .from(poolMembers)
+    .where(
+      and(
+        eq(poolMembers.poolId, input.poolId),
+        eq(poolMembers.contributorUserId, input.userId)
+      )
+    )
+    .limit(1);
+
+  if (existingMember) {
+    if (existingMember.status === "paid") {
+      return { success: false, error: "You have already paid for this pool." } as const;
+    }
+    // Update from expected to pending
+    await db
+      .update(poolMembers)
+      .set({ status: "pending" })
+      .where(eq(poolMembers.id, existingMember.id));
+  } else {
+    // Insert as pending (user wasn't pre-added but joined via link)
+    await db.insert(poolMembers).values({
+      poolId: input.poolId,
+      name: input.userName,
+      phone: "",
+      customFieldValue: "",
+      contributorUserId: input.userId,
+      status: "pending",
+    });
+  }
+
+  await Promise.all([
+    createPoolActivity({
+      actorUserId: input.userId,
+      kind: "member_joined",
+      message: `${input.userName} joined the pool (pay later)`,
+      poolId: input.poolId,
+    }),
+    createNotification({
+      body: `You joined ${pool.name}. You can pay anytime before the deadline.`,
+      kind: "pool_joined",
+      linkHref: `/impact-contribution?poolId=${input.poolId}`,
+      poolId: input.poolId,
+      title: "You joined a pool",
+      userId: input.userId,
+    }),
+  ]);
+
+  return { success: true } as const;
 }

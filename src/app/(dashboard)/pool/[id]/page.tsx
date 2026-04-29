@@ -16,7 +16,7 @@ interface PoolMember {
   info: string;
   initials: string;
   name: string;
-  status: "paid" | "pending";
+  status: "paid" | "pending" | "expected";
 }
 
 interface PoolResponse {
@@ -27,6 +27,7 @@ interface PoolResponse {
   id: string;
   isCompleted: boolean;
   members: PoolMember[];
+  expectedCount: number;
   paidCount: number;
   pendingCount: number;
   perPerson: string;
@@ -173,6 +174,7 @@ export default function PoolDashboardPage() {
           activities: pool.activities,
           poolLink: pool.poolLink,
           settings: pool.settings,
+          expectedCount: pool.expectedCount,
         }}
         onExportCsv={handleExportCsv}
         onSendReminders={handleSendReminders}

@@ -15,7 +15,7 @@ interface PoolMember {
   info: string;
   initials: string;
   name: string;
-  status: "paid" | "pending";
+  status: "paid" | "pending" | "expected";
 }
 
 interface AdminPoolViewProps {
@@ -28,6 +28,7 @@ interface AdminPoolViewProps {
     raised: number;
     target: number;
     perPerson: string;
+    expectedCount: number;
     paidCount: number;
     pendingCount: number;
     totalMembers: number;
@@ -66,7 +67,7 @@ export default function AdminPoolView({
   onCancelPool,
   onPausePool,
 }: AdminPoolViewProps) {
-  const [filter, setFilter] = useState<"all" | "paid" | "pending">("all");
+  const [filter, setFilter] = useState<"all" | "paid" | "pending" | "expected">("all");
   const [activeTab, setActiveTab] = useState<AdminTab>("members");
   const [selectedMember, setSelectedMember] = useState<PoolMember | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -210,19 +211,18 @@ export default function AdminPoolView({
         {/* Members Tab */}
         {activeTab === "members" && (
           <div>
-            <div className="p-4 border-b border-[#e5e8ef] flex items-center justify-between bg-gray-50/50">
-              <div className="flex items-center gap-3">
-                <div className="flex gap-1.5">
-                  <span className="bg-[#f4f5f7] text-[#12b76a] text-[10px] font-bold px-2 py-0.5 rounded-full">{pool.paidCount} Paid</span>
-                  <span className="bg-[#f4f5f7] text-[#f79009] text-[10px] font-bold px-2 py-0.5 rounded-full">{pool.pendingCount} Pending</span>
-                </div>
+            <div className="p-4 border-b border-[#e5e8ef] flex flex-wrap items-center justify-between gap-2 bg-gray-50/50">
+              <div className="flex items-center gap-1.5">
+                <span className="bg-[#f4f5f7] text-[#12b76a] text-[10px] font-bold px-2 py-0.5 rounded-full">{pool.paidCount} Paid</span>
+                <span className="bg-[#f4f5f7] text-[#f79009] text-[10px] font-bold px-2 py-0.5 rounded-full">{pool.pendingCount} Pending</span>
+                <span className="bg-[#f4f5f7] text-[#1b4fd8] text-[10px] font-bold px-2 py-0.5 rounded-full">{pool.expectedCount} Expected</span>
               </div>
               <div className="flex bg-[#f4f5f7] p-1 rounded-full text-[12px] font-semibold">
-                {(["all", "paid", "pending"] as const).map((f) => (
+                {(["all", "paid", "pending", "expected"] as const).map((f) => (
                   <button
                     key={f}
                     onClick={() => setFilter(f)}
-                    className={`px-4 py-1 rounded-full transition-all ${filter === f ? "bg-white text-[#1b4fd8] shadow-sm" : "text-[#6b7280]"}`}
+                    className={`px-3 py-1 rounded-full transition-all ${filter === f ? "bg-white text-[#1b4fd8] shadow-sm" : "text-[#6b7280]"}`}
                   >
                     {f.charAt(0).toUpperCase() + f.slice(1)}
                   </button>
@@ -241,8 +241,8 @@ export default function AdminPoolView({
                       <p className="text-[11px] text-[#6b7280]">{member.info}</p>
                     </div>
                   </div>
-                  <div className={`text-[11px] font-bold px-3 py-1 rounded-full ${member.status === "paid" ? "bg-success-bg text-success" : "bg-orange-50 text-warning"}`}>
-                    {member.status === "paid" ? "Paid ✓" : "Pending"}
+                  <div className={`text-[11px] font-bold px-3 py-1 rounded-full ${member.status === "paid" ? "bg-success-bg text-success" : member.status === "expected" ? "bg-blue-50 text-[#1b4fd8]" : "bg-orange-50 text-warning"}`}>
+                    {member.status === "paid" ? "Paid ✓" : member.status === "expected" ? "Expected" : "Pending"}
                   </div>
                 </div>
               ))}
@@ -429,8 +429,8 @@ export default function AdminPoolView({
                   <p className="text-[14px] font-semibold text-[#1a1f2e]">{selectedMember.name}</p>
                   <p className="text-[11px] text-[#6b7280]">{selectedMember.info}</p>
                 </div>
-                <div className={`text-[11px] font-bold px-3 py-1 rounded-full ${selectedMember.status === "paid" ? "bg-success-bg text-success" : "bg-orange-50 text-warning"}`}>
-                  {selectedMember.status === "paid" ? "Paid ✓" : "Pending"}
+                <div className={`text-[11px] font-bold px-3 py-1 rounded-full ${selectedMember.status === "paid" ? "bg-success-bg text-success" : selectedMember.status === "expected" ? "bg-blue-50 text-[#1b4fd8]" : "bg-orange-50 text-warning"}`}>
+                  {selectedMember.status === "paid" ? "Paid ✓" : selectedMember.status === "expected" ? "Expected" : "Pending"}
                 </div>
               </div>
 
