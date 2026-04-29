@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import AdminPoolView from "@/src/components/pool/AdminPoolView";
 
@@ -27,6 +27,7 @@ interface PoolResponse {
   id: string;
   isCompleted: boolean;
   members: PoolMember[];
+  requiredFields: string[];
   expectedCount: number;
   paidCount: number;
   pendingCount: number;
@@ -53,8 +54,6 @@ export default function PoolDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [isExportingCsv, setIsExportingCsv] = useState(false);
-  const [isSendingReminders, setIsSendingReminders] = useState(false);
 
   const loadPool = async () => {
     if (!poolId) return;
@@ -88,7 +87,6 @@ export default function PoolDashboardPage() {
   const handleSendReminders = async () => {
     setErrorMessage("");
     setSuccessMessage("");
-    setIsSendingReminders(true);
     const response = await fetch(`/api/pools/${poolId}/reminders`, { method: "POST" });
     const payload = await response.json().catch(() => null);
     if (!response.ok) {
@@ -97,7 +95,6 @@ export default function PoolDashboardPage() {
       setSuccessMessage(`Reminders sent to ${payload?.pendingCount ?? 0} unpaid members.`);
     }
     await loadPool();
-    setIsSendingReminders(false);
   };
 
   const copyPoolLink = async () => {
@@ -114,7 +111,6 @@ export default function PoolDashboardPage() {
   const handleExportCsv = async () => {
     setErrorMessage("");
     setSuccessMessage("");
-    setIsExportingCsv(true);
     try {
       const response = await fetch(`/api/pools/${poolId}/export`, { cache: "no-store" });
       if (!response.ok) {
@@ -134,8 +130,6 @@ export default function PoolDashboardPage() {
       setSuccessMessage("CSV report downloaded.");
     } catch {
       setErrorMessage("We couldn't export the CSV yet.");
-    } finally {
-      setIsExportingCsv(false);
     }
   };
 
@@ -170,6 +164,7 @@ export default function PoolDashboardPage() {
           paidCount: pool.paidCount,
           pendingCount: pool.pendingCount,
           totalMembers: pool.totalMembers,
+          requiredFields: pool.requiredFields,
           members: pool.members,
           activities: pool.activities,
           poolLink: pool.poolLink,
@@ -182,6 +177,9 @@ export default function PoolDashboardPage() {
         onClosePool={() => setSuccessMessage("Close pool feature coming soon.")}
         onCancelPool={() => setSuccessMessage("Cancel pool feature coming soon.")}
         onPausePool={() => setSuccessMessage("Pause pool feature coming soon.")}
+        onMemberStatusChange={() => {
+          void loadPool();
+        }}
       />
     </div>
   );

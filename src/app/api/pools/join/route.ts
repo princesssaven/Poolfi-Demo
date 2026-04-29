@@ -17,7 +17,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
   }
 
-  let body: { poolId?: string };
+  let body: {
+    identityValues?: Record<string, string>;
+    poolId?: string;
+  };
 
   try {
     body = await request.json();
@@ -28,7 +31,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { poolId } = body;
+  const { identityValues, poolId } = body;
 
   if (!poolId || typeof poolId !== "string") {
     return NextResponse.json(
@@ -37,7 +40,19 @@ export async function POST(request: Request) {
     );
   }
 
+  if (
+    !identityValues ||
+    typeof identityValues !== "object" ||
+    Array.isArray(identityValues)
+  ) {
+    return NextResponse.json(
+      { message: "Identity details are required." },
+      { status: 400 }
+    );
+  }
+
   const result = await joinPoolPayLater({
+    identityValues,
     userId: user.id,
     userName: `${user.firstName} ${user.lastName}`.trim() || user.pseudonym,
     poolId,

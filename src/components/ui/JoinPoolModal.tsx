@@ -15,12 +15,15 @@ const svgPaths = {
 interface JoinPoolModalProps {
   isOpen: boolean;
   onClose: () => void;
+  poolId: string;
   poolName?: string;
   poolDescription?: string;
   adminName?: string;
   perPersonAmount?: number;
+  requiredFields?: string[];
   walletBalance?: number;
   userName?: string;
+  onConfirm?: () => void;
   onContribute?: () => void;
   onBackToDashboard?: () => void;
 }
@@ -30,15 +33,54 @@ function IdentityStep({
   poolName,
   poolDescription,
   adminName,
+  requiredFields,
   onConfirm,
+  isLoading,
+  errorMessage,
 }: {
   poolName: string;
   poolDescription: string;
   adminName: string;
-  onConfirm: () => void;
+  requiredFields: string[];
+  onConfirm: (input: { identityValues: Record<string, string> }) => void;
+  isLoading: boolean;
+  errorMessage: string;
 }) {
-  const [phone, setPhone] = useState("");
-  const [matric, setMatric] = useState("");
+  const [identityValues, setIdentityValues] = useState<Record<string, string>>(
+    {}
+  );
+
+  const getPlaceholder = (field: string) => {
+    const fieldKey = field.toLowerCase();
+
+    if (fieldKey.includes("phone")) {
+      return "Enter your phone number";
+    }
+
+    if (fieldKey.includes("matric")) {
+      return "e.g. CSC/2022/045";
+    }
+
+    if (fieldKey.includes("name")) {
+      return "Enter your full name";
+    }
+
+    return `Enter your ${field.toLowerCase()}`;
+  };
+
+  const getInputType = (field: string) => {
+    const fieldKey = field.toLowerCase();
+
+    if (fieldKey.includes("phone")) {
+      return "tel";
+    }
+
+    if (fieldKey.includes("email")) {
+      return "email";
+    }
+
+    return "text";
+  };
 
   return (
     <div className="flex flex-col gap-[18px] p-[11px]">
@@ -57,55 +99,47 @@ function IdentityStep({
 
       {/* Form */}
       <div className="flex flex-col gap-[14px] px-3 pb-2">
-        {/* Phone Number Field */}
-        <div className="flex flex-col gap-[6px] w-full">
-          <div className="flex gap-[5px] items-center">
-            <label className="font-['DM_Sans',sans-serif] font-semibold text-[#1a1f2e] text-[12px]">
-              Phone Number
-            </label>
-            <div className="bg-[#eef3ff] flex items-center px-2 py-0.5 rounded-full">
-              <span className="font-['DM_Sans',sans-serif] font-bold text-[#f04438] text-[10px]">
-                Required
-              </span>
+        {requiredFields.map((field) => (
+          <div key={field} className="flex flex-col gap-[6px] w-full">
+            <div className="flex gap-[5px] items-center">
+              <label className="font-['DM_Sans',sans-serif] font-semibold text-[#1a1f2e] text-[12px]">
+                {field}
+              </label>
+              <div className="bg-[#eef3ff] flex items-center px-2 py-0.5 rounded-full">
+                <span className="font-['DM_Sans',sans-serif] font-bold text-[#f04438] text-[10px]">
+                  Required
+                </span>
+              </div>
             </div>
+            <input
+              type={getInputType(field)}
+              value={identityValues[field] ?? ""}
+              onChange={(e) =>
+                setIdentityValues((current) => ({
+                  ...current,
+                  [field]: e.target.value,
+                }))
+              }
+              placeholder={getPlaceholder(field)}
+              className="w-full bg-white border border-[#e5e8ef] rounded-[9px] px-[14px] py-[11px] text-[13px] text-[#1a1f2e] placeholder-[#c4c9d4] focus:outline-none focus:border-[#1b4fd8] transition-colors font-['DM_Sans',sans-serif]"
+            />
           </div>
-          <input
-            type="text"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Enter your Phone number"
-            className="w-full bg-white border border-[#e5e8ef] rounded-[9px] px-[14px] py-[11px] text-[13px] text-[#1a1f2e] placeholder-[#c4c9d4] focus:outline-none focus:border-[#1b4fd8] transition-colors font-['DM_Sans',sans-serif]"
-          />
-        </div>
-
-        {/* Matric Number Field */}
-        <div className="flex flex-col gap-[6px] w-full">
-          <div className="flex gap-[5px] items-center">
-            <label className="font-['DM_Sans',sans-serif] font-semibold text-[#1a1f2e] text-[12px]">
-              Matric Number
-            </label>
-            <div className="bg-[#eef3ff] flex items-center px-2 py-0.5 rounded-full">
-              <span className="font-['DM_Sans',sans-serif] font-bold text-[#f04438] text-[10px]">
-                Required
-              </span>
-            </div>
-          </div>
-          <input
-            type="text"
-            value={matric}
-            onChange={(e) => setMatric(e.target.value)}
-            placeholder="e.g. CSC/2022/045"
-            className="w-full bg-white border border-[#e5e8ef] rounded-[9px] px-[14px] py-[11px] text-[13px] text-[#1a1f2e] placeholder-[#c4c9d4] focus:outline-none focus:border-[#1b4fd8] transition-colors font-['DM_Sans',sans-serif]"
-          />
-        </div>
+        ))}
 
         {/* Confirm Button */}
         <button
-          onClick={onConfirm}
-          className="bg-[#1b4fd8] text-white font-['DM_Sans',sans-serif] font-bold text-[15px] rounded-[10px] w-full py-[12px] mt-2 hover:bg-[#0f2fa8] transition-colors active:scale-[0.98] tracking-[-0.2px]"
+          onClick={() => onConfirm({ identityValues })}
+          disabled={isLoading}
+          className="bg-[#1b4fd8] text-white font-['DM_Sans',sans-serif] font-bold text-[15px] rounded-[10px] w-full py-[12px] mt-2 hover:bg-[#0f2fa8] transition-colors active:scale-[0.98] tracking-[-0.2px] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Confirm that&apos;s me
+          {isLoading ? "Verifying..." : "Confirm that's me"}
         </button>
+
+        {errorMessage ? (
+          <p className="text-[#f04438] text-[12px] font-['DM_Sans',sans-serif] font-semibold leading-snug">
+            {errorMessage}
+          </p>
+        ) : null}
 
         {/* Secure Note */}
         <div className="flex items-center justify-center mt-1">
@@ -125,12 +159,16 @@ function ConfirmedStep({
   perPersonAmount,
   onContribute,
   onBackToDashboard,
+  isLoading,
+  errorMessage,
 }: {
   userName: string;
   walletBalance: number;
   perPersonAmount: number;
   onContribute: () => void;
   onBackToDashboard: () => void;
+  isLoading: boolean;
+  errorMessage: string;
 }) {
   return (
     <div className="flex flex-col gap-[18px] items-center p-[11px]">
@@ -181,10 +219,17 @@ function ConfirmedStep({
         {/* Contribute Button */}
         <button
           onClick={onContribute}
-          className="bg-[#1b4fd8] text-white font-['DM_Sans',sans-serif] font-bold text-[15px] rounded-[10px] w-full py-[12px] hover:bg-[#0f2fa8] transition-colors active:scale-[0.98] tracking-[-0.2px]"
+          disabled={isLoading}
+          className="bg-[#1b4fd8] text-white font-['DM_Sans',sans-serif] font-bold text-[15px] rounded-[10px] w-full py-[12px] hover:bg-[#0f2fa8] transition-colors active:scale-[0.98] tracking-[-0.2px] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Contribute {formatCurrency(perPersonAmount)} →
+          {isLoading ? "Processing..." : `Contribute ${formatCurrency(perPersonAmount)} →`}
         </button>
+
+        {errorMessage ? (
+          <p className="text-[#f04438] text-[12px] font-['DM_Sans',sans-serif] font-semibold leading-snug">
+            {errorMessage}
+          </p>
+        ) : null}
 
         {/* Back to Dashboard */}
         <button
@@ -202,33 +247,85 @@ function ConfirmedStep({
 export default function JoinPoolModal({
   isOpen,
   onClose,
+  poolId,
   poolName = "Princess Saven",
   poolDescription = "Amaka's wedding is coming up and we need to surprise her",
   adminName = "Chidi Nwosu..",
   perPersonAmount = 1000,
+  requiredFields = [],
   walletBalance = 31500,
   userName = "Princess Saven",
+  onConfirm,
   onContribute,
   onBackToDashboard,
 }: JoinPoolModalProps) {
   const [step, setStep] = useState<"identity" | "confirmed">("identity");
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   if (!isOpen) return null;
 
-  const handleConfirm = () => {
-    setStep("confirmed");
+  const fieldsToConfirm = requiredFields.length > 0 ? requiredFields : ["Phone No", "Matric. No"];
+
+  const handleConfirm = async (input: { identityValues: Record<string, string> }) => {
+    setErrorMessage("");
+    const missingFields = fieldsToConfirm.filter(
+      (field) => !input.identityValues[field]?.trim()
+    );
+
+    if (missingFields.length > 0) {
+      setErrorMessage(`Enter ${missingFields.join(", ")} to confirm.`);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/pools/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ poolId, ...input }),
+      });
+      if (res.ok) {
+        setStep("confirmed");
+        onConfirm?.();
+      } else {
+        const error = await res.json();
+        setErrorMessage(error.message || "Failed to join pool");
+      }
+    } catch {
+      setErrorMessage("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClose = () => {
     setStep("identity");
+    setErrorMessage("");
     onClose();
   };
 
-  const handleContribute = () => {
-    if (onContribute) {
-      onContribute();
+  const handleContribute = async () => {
+    setErrorMessage("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/pools/contribute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ poolId, amountNgn: perPersonAmount }),
+      });
+      if (res.ok) {
+        if (onContribute) onContribute();
+        handleClose();
+      } else {
+        const error = await res.json();
+        setErrorMessage(error.message || "Failed to contribute");
+      }
+    } catch {
+      setErrorMessage("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    handleClose();
   };
 
   const handleBackToDashboard = () => {
@@ -259,7 +356,10 @@ export default function JoinPoolModal({
             poolName={poolName}
             poolDescription={poolDescription}
             adminName={adminName}
+            requiredFields={fieldsToConfirm}
             onConfirm={handleConfirm}
+            isLoading={loading}
+            errorMessage={errorMessage}
           />
         ) : (
           <ConfirmedStep
@@ -268,6 +368,8 @@ export default function JoinPoolModal({
             perPersonAmount={perPersonAmount}
             onContribute={handleContribute}
             onBackToDashboard={handleBackToDashboard}
+            isLoading={loading}
+            errorMessage={errorMessage}
           />
         )}
       </div>

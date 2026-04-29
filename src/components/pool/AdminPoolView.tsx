@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import svgPaths from "@/src/lib/design-system/svg-paths";
+import { useRouter } from "next/navigation";
 import { formatNumberWithCommas } from "@/src/lib/format-utils";
 import JoinPoolModal from "../ui/JoinPoolModal";
 
@@ -33,6 +33,7 @@ interface AdminPoolViewProps {
     expectedCount: number;
     paidCount: number;
     pendingCount: number;
+    requiredFields: string[];
     totalMembers: number;
     members: PoolMember[];
     activities: PoolActivityItem[];
@@ -52,6 +53,7 @@ interface AdminPoolViewProps {
   onClosePool?: () => void;
   onCancelPool?: () => void;
   onPausePool?: () => void;
+  onMemberStatusChange?: () => void;
 }
 
 function formatCurrency(amount: number) {
@@ -68,7 +70,9 @@ export default function AdminPoolView({
   onClosePool,
   onCancelPool,
   onPausePool,
+  onMemberStatusChange,
 }: AdminPoolViewProps) {
+  const router = useRouter();
   const [filter, setFilter] = useState<"all" | "paid" | "pending" | "expected">("all");
   const [activeTab, setActiveTab] = useState<AdminTab>("members");
   const [selectedMember, setSelectedMember] = useState<PoolMember | null>(null);
@@ -106,6 +110,11 @@ export default function AdminPoolView({
   const handleWhatsApp = () => {
     const msg = `Join my pool on PoolFi: https://poolfi-pre-mvpp.vercel.app${pool.poolLink}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
+  };
+
+  const handleMemberStatusChange = () => {
+    onMemberStatusChange?.();
+    router.refresh();
   };
 
   const filteredMembers = pool.members.filter(m => {
@@ -497,11 +506,16 @@ export default function AdminPoolView({
       <JoinPoolModal 
         isOpen={isJoinModalOpen} 
         onClose={() => setIsJoinModalOpen(false)} 
+        poolId={pool.id}
         poolName={pool.title}
         poolDescription="You've been invited to contribute"
         adminName={selectedMember?.name}
         perPersonAmount={Number(pool.settings?.perPersonAmount || pool.perPerson?.replace(/[^0-9]/g, '') || 1000)}
+        requiredFields={pool.requiredFields}
         userName={selectedMember?.name || "Member"}
+        onConfirm={handleMemberStatusChange}
+        onContribute={handleMemberStatusChange}
+        onBackToDashboard={handleMemberStatusChange}
       />
     </div>
   );

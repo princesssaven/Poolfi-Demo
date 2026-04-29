@@ -46,6 +46,8 @@ interface UpdatePoolSettingsInput {
   perPersonAmount: number;
 }
 
+type IdentityValues = Record<string, string>;
+
 function getCategoryMeta(category: string) {
   switch (category) {
     case "education":
@@ -131,6 +133,80 @@ function buildPoolSlug(name: string) {
     shareCode,
     slug: `${slugBase}-${shareCode}`,
   };
+}
+
+function normalizeIdentityValue(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function normalizePhoneValue(value: string) {
+  const digits = value.replace(/\D/g, "");
+  return digits || normalizeIdentityValue(value);
+}
+
+function getRequiredMemberFields(pool: DatabasePool) {
+  const fields = [...pool.identityFields, ...pool.customFields]
+    .map((field) => field.trim())
+    .filter(Boolean);
+
+  return fields.length > 0 ? Array.from(new Set(fields)) : ["Phone No", "Matric. No"];
+}
+
+function getIdentityInputValue(values: IdentityValues, field: string) {
+  const exactValue = values[field];
+
+  if (typeof exactValue === "string") {
+    return exactValue.trim();
+  }
+
+  const fieldKey = normalizeIdentityValue(field);
+  const matchingKey = Object.keys(values).find(
+    (key) => normalizeIdentityValue(key) === fieldKey
+  );
+
+  return matchingKey ? values[matchingKey].trim() : "";
+}
+
+function getMemberFieldValue(member: DatabasePoolMember, field: string) {
+  const fieldKey = normalizeIdentityValue(field);
+
+  if (fieldKey.includes("name")) {
+    return member.name;
+  }
+
+  if (fieldKey.includes("phone")) {
+    return member.phone;
+  }
+
+  return member.customFieldValue;
+}
+
+function getMemberFieldKey(field: string) {
+  const fieldKey = normalizeIdentityValue(field);
+
+  if (fieldKey.includes("name")) {
+    return "name";
+  }
+
+  if (fieldKey.includes("phone")) {
+    return "phone";
+  }
+
+  return "custom";
+}
+
+function fieldValuesMatch(
+  member: DatabasePoolMember,
+  field: string,
+  inputValue: string
+) {
+  const memberValue = getMemberFieldValue(member, field);
+
+  if (normalizeIdentityValue(field).includes("phone")) {
+    return normalizePhoneValue(memberValue) === normalizePhoneValue(inputValue);
+  }
+
+  return normalizeIdentityValue(memberValue) === normalizeIdentityValue(inputValue);
 }
 
 function getPoolMetrics(pool: DatabasePool, members: DatabasePoolMember[]) {
@@ -236,6 +312,7 @@ export async function createPool(input: CreatePoolInput) {
         name: member.name.trim(),
         phone: member.phone.trim(),
         poolId: pool.id,
+        status: "expected",
       }))
     );
   }
@@ -452,7 +529,7 @@ export async function getHomeDashboardData(userId: string) {
 
   const locked = lockedFromOwnedPools + lockedFromContributions;
 
-  let availableFromOwnedPools = ownedPools.reduce((total, pool, index) => {
+  const availableFromOwnedPools = ownedPools.reduce((total, pool, index) => {
     if (pool.status !== "completed") {
       return total;
     }
@@ -637,6 +714,7 @@ export async function getPoolDashboardViewData(poolId: string, ownerId: string) 
     daysLeft: getDaysLeft(pool.deadline),
     id: pool.id,
     isCompleted,
+    requiredFields: getRequiredMemberFields(pool),
     members: members.map((member, index) => ({
       bgColor: buildMemberColor(index),
       info:
@@ -981,6 +1059,7 @@ export async function joinPoolPayLater(input: {
   userId: string;
   userName: string;
   poolId: string;
+  identityValues: IdentityValues;
 }) {
   const db = getDb();
 
@@ -996,6 +1075,18 @@ export async function joinPoolPayLater(input: {
 
   if (pool.status !== "active") {
     return { success: false, error: "This pool is no longer accepting members." } as const;
+  }
+
+  const requiredFields = getRequiredMemberFields(pool);
+  const missingFields = requiredFields.filter(
+    (field) => !getIdentityInputValue(input.identityValues, field)
+  );
+
+  if (missingFields.length > 0) {
+    return {
+      success: false,
+      error: `Enter ${missingFields.join(", ")} to confirm your identity.`,
+    } as const;
   }
 
   // Check if user is already a member
@@ -1014,21 +1105,65 @@ export async function joinPoolPayLater(input: {
     if (existingMember.status === "paid") {
       return { success: false, error: "You have already paid for this pool." } as const;
     }
-    // Update from expected to pending
+
     await db
       .update(poolMembers)
       .set({ status: "pending" })
       .where(eq(poolMembers.id, existingMember.id));
   } else {
-    // Insert as pending (user wasn't pre-added but joined via link)
-    await db.insert(poolMembers).values({
-      poolId: input.poolId,
-      name: input.userName,
-      phone: "",
-      customFieldValue: "",
-      contributorUserId: input.userId,
-      status: "pending",
-    });
+    const members = await getMembersForPool(input.poolId);
+    const matchingMember = members.find(
+      (member) => {
+        if (requiredFields.length === 0) {
+          return false;
+        }
+
+        const fieldGroups = requiredFields.reduce<Record<string, string[]>>(
+          (groups, field) => {
+            const key = getMemberFieldKey(field);
+            groups[key] = [...(groups[key] ?? []), field];
+            return groups;
+          },
+          {}
+        );
+
+        return Object.values(fieldGroups).every((fields) =>
+          fields.some((field) =>
+            fieldValuesMatch(
+              member,
+              field,
+              getIdentityInputValue(input.identityValues, field)
+            )
+          )
+        );
+      }
+    );
+
+    if (!matchingMember) {
+      return {
+        success: false,
+        error: "We couldn't match those details to this pool's member list.",
+      } as const;
+    }
+
+    if (matchingMember.contributorUserId) {
+      return {
+        success: false,
+        error: "This member slot has already been claimed.",
+      } as const;
+    }
+
+    if (matchingMember.status === "paid") {
+      return { success: false, error: "This member has already paid for this pool." } as const;
+    }
+
+    await db
+      .update(poolMembers)
+      .set({
+        contributorUserId: input.userId,
+        status: "pending",
+      })
+      .where(eq(poolMembers.id, matchingMember.id));
   }
 
   await Promise.all([
