@@ -61,18 +61,6 @@ export default function PublicPoolView({ pool }: PublicPoolViewProps) {
 
   return (
     <div className="min-h-screen bg-white font-['Inter',sans-serif]">
-      {/* Header / Logo bar */}
-      <header className="bg-white border-b border-[#e5e8ef] h-[79px] px-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-[#1b4fd8] rounded-md size-[40px] flex items-center justify-center">
-             <span className="text-white font-bold">P</span>
-          </div>
-          <p className="font-['Sora',sans-serif] font-bold text-[#1a1f2e] text-[24px]">PoolFi</p>
-        </div>
-        <Link href="/sign-up" className="text-sm font-bold text-[#1b4fd8] hover:underline">
-          Sign up to create your own pool
-        </Link>
-      </header>
 
       <main className="relative">
         {/* Hero Section */}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import svgPaths from "@/src/lib/design-system/svg-paths";
 import { formatNumberWithCommas } from "@/src/lib/format-utils";
+import JoinPoolModal from "../ui/JoinPoolModal";
 
 interface PoolActivityItem {
   dotColor: string;
@@ -73,6 +74,7 @@ export default function AdminPoolView({
   const [selectedMember, setSelectedMember] = useState<PoolMember | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
 
   const openDrawer = (member: PoolMember) => {
     setSelectedMember(member);
@@ -441,10 +443,16 @@ export default function AdminPoolView({
 
               {/* Actions */}
               <div className="flex flex-col gap-2.5">
-                <button className="bg-[#eef3ff] text-[#1b4fd8] font-bold py-3.5 rounded-xl text-[14px] hover:bg-[#dde6ff] transition-colors">
+                <button 
+                  onClick={() => setIsJoinModalOpen(true)}
+                  className="bg-[#eef3ff] text-[#1b4fd8] font-bold py-3.5 rounded-xl text-[14px] hover:bg-[#dde6ff] transition-colors"
+                >
                   Join Pool (Pay Later)
                 </button>
-                <button className="bg-[#1b4fd8] text-white font-bold py-3.5 rounded-xl text-[14px] hover:bg-[#0f2fa8] transition-colors shadow-lg shadow-blue-500/20">
+                <button 
+                  onClick={() => setIsJoinModalOpen(true)}
+                  className="bg-[#1b4fd8] text-white font-bold py-3.5 rounded-xl text-[14px] hover:bg-[#0f2fa8] transition-colors shadow-lg shadow-blue-500/20"
+                >
                   Join &amp; Pay Now – {pool.perPerson}
                 </button>
                 <p className="text-[11px] text-[#6b7280] text-center">Don&apos;t have an account? Sign up to join.</p>
@@ -485,6 +493,16 @@ export default function AdminPoolView({
           </div>
         </>
       )}
+      {/* Join Pool Modal */}
+      <JoinPoolModal 
+        isOpen={isJoinModalOpen} 
+        onClose={() => setIsJoinModalOpen(false)} 
+        poolName={pool.title}
+        poolDescription="You've been invited to contribute"
+        adminName={selectedMember?.name}
+        perPersonAmount={Number(pool.settings?.perPersonAmount || pool.perPerson?.replace(/[^0-9]/g, '') || 1000)}
+        userName={selectedMember?.name || "Member"}
+      />
     </div>
   );
 }
