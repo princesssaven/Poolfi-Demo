@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { formatNumberWithCommas } from "@/src/lib/format-utils";
-import JoinPoolModal from "../ui/JoinPoolModal";
 
 interface PoolActivityItem {
   dotColor: string;
@@ -16,6 +14,7 @@ interface PoolMember {
   bgColor: string;
   info: string;
   initials: string;
+  isCreator?: boolean;
   name: string;
   status: "paid" | "pending" | "expected";
 }
@@ -23,6 +22,7 @@ interface PoolMember {
 interface AdminPoolViewProps {
   pool: {
     id: string;
+    adminName: string;
     title: string;
     category: string;
     closesDate: string;
@@ -53,7 +53,6 @@ interface AdminPoolViewProps {
   onClosePool?: () => void;
   onCancelPool?: () => void;
   onPausePool?: () => void;
-  onMemberStatusChange?: () => void;
 }
 
 function formatCurrency(amount: number) {
@@ -70,15 +69,12 @@ export default function AdminPoolView({
   onClosePool,
   onCancelPool,
   onPausePool,
-  onMemberStatusChange,
 }: AdminPoolViewProps) {
-  const router = useRouter();
   const [filter, setFilter] = useState<"all" | "paid" | "pending" | "expected">("all");
   const [activeTab, setActiveTab] = useState<AdminTab>("members");
   const [selectedMember, setSelectedMember] = useState<PoolMember | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
 
   const openDrawer = (member: PoolMember) => {
     setSelectedMember(member);
@@ -110,11 +106,6 @@ export default function AdminPoolView({
   const handleWhatsApp = () => {
     const msg = `Join my pool on PoolFi: https://poolfi-pre-mvpp.vercel.app${pool.poolLink}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
-  };
-
-  const handleMemberStatusChange = () => {
-    onMemberStatusChange?.();
-    router.refresh();
   };
 
   const filteredMembers = pool.members.filter(m => {
@@ -249,12 +240,19 @@ export default function AdminPoolView({
                       {member.initials}
                     </div>
                     <div>
-                      <p className="text-[14px] font-semibold text-[#1a1f2e]">{member.name}</p>
+                      <p className="flex items-center gap-2 text-[14px] font-semibold text-[#1a1f2e]">
+                        <span>{member.name}</span>
+                        {member.isCreator ? (
+                          <span className="rounded-full bg-[#1b4fd8] px-2 py-0.5 text-[10px] font-bold text-white">
+                            You
+                          </span>
+                        ) : null}
+                      </p>
                       <p className="text-[11px] text-[#6b7280]">{member.info}</p>
                     </div>
                   </div>
-                  <div className={`text-[11px] font-bold px-3 py-1 rounded-full ${member.status === "paid" ? "bg-success-bg text-success" : member.status === "expected" ? "bg-blue-50 text-[#1b4fd8]" : "bg-orange-50 text-warning"}`}>
-                    {member.status === "paid" ? "Paid ✓" : member.status === "expected" ? "Expected" : "Pending"}
+                  <div className={`text-[11px] font-bold px-3 py-1 rounded-full ${member.isCreator ? "bg-[#eef3ff] text-[#1b4fd8]" : member.status === "paid" ? "bg-success-bg text-success" : member.status === "expected" ? "bg-blue-50 text-[#1b4fd8]" : "bg-orange-50 text-warning"}`}>
+                    {member.isCreator ? "Creator" : member.status === "paid" ? "Paid ✓" : member.status === "expected" ? "Expected" : "Pending"}
                   </div>
                 </div>
               ))}
@@ -423,8 +421,8 @@ export default function AdminPoolView({
                   <span className="text-[14px] font-bold text-[#1a1f2e]">{pool.perPerson} (Fixed)</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[13px] text-[#6b7280]">Admin</span>
-                  <span className="text-[14px] font-bold text-[#1a1f2e]">{selectedMember.name}</span>
+                  <span className="text-[13px] text-[#6b7280]">Creator</span>
+                  <span className="text-[14px] font-bold text-[#1a1f2e]">{pool.adminName}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-[13px] text-[#6b7280]">Deadline</span>
@@ -442,29 +440,31 @@ export default function AdminPoolView({
                   {selectedMember.initials}
                 </div>
                 <div className="flex-1">
-                  <p className="text-[14px] font-semibold text-[#1a1f2e]">{selectedMember.name}</p>
+                  <p className="flex items-center gap-2 text-[14px] font-semibold text-[#1a1f2e]">
+                    <span>{selectedMember.name}</span>
+                    {selectedMember.isCreator ? (
+                      <span className="rounded-full bg-[#1b4fd8] px-2 py-0.5 text-[10px] font-bold text-white">
+                        You
+                      </span>
+                    ) : null}
+                  </p>
                   <p className="text-[11px] text-[#6b7280]">{selectedMember.info}</p>
                 </div>
-                <div className={`text-[11px] font-bold px-3 py-1 rounded-full ${selectedMember.status === "paid" ? "bg-success-bg text-success" : selectedMember.status === "expected" ? "bg-blue-50 text-[#1b4fd8]" : "bg-orange-50 text-warning"}`}>
-                  {selectedMember.status === "paid" ? "Paid ✓" : selectedMember.status === "expected" ? "Expected" : "Pending"}
+                <div className={`text-[11px] font-bold px-3 py-1 rounded-full ${selectedMember.isCreator ? "bg-[#eef3ff] text-[#1b4fd8]" : selectedMember.status === "paid" ? "bg-success-bg text-success" : selectedMember.status === "expected" ? "bg-blue-50 text-[#1b4fd8]" : "bg-orange-50 text-warning"}`}>
+                  {selectedMember.isCreator ? "Creator" : selectedMember.status === "paid" ? "Paid ✓" : selectedMember.status === "expected" ? "Expected" : "Pending"}
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col gap-2.5">
-                <button 
-                  onClick={() => setIsJoinModalOpen(true)}
-                  className="bg-[#eef3ff] text-[#1b4fd8] font-bold py-3.5 rounded-xl text-[14px] hover:bg-[#dde6ff] transition-colors"
-                >
-                  Join Pool (Pay Later)
-                </button>
-                <button 
-                  onClick={() => setIsJoinModalOpen(true)}
-                  className="bg-[#1b4fd8] text-white font-bold py-3.5 rounded-xl text-[14px] hover:bg-[#0f2fa8] transition-colors shadow-lg shadow-blue-500/20"
-                >
-                  Join &amp; Pay Now – {pool.perPerson}
-                </button>
-                <p className="text-[11px] text-[#6b7280] text-center">Don&apos;t have an account? Sign up to join.</p>
+              <div className="rounded-xl border border-[#1b4fd8]/15 bg-[#eef3ff] p-4">
+                <p className="text-[13px] font-bold text-[#1a1f2e]">
+                  {selectedMember.isCreator ? "Creator account" : "Member slot"}
+                </p>
+                <p className="mt-1 text-[12px] leading-relaxed text-[#1340b8]/80">
+                  {selectedMember.isCreator
+                    ? "This is the only account with admin rights for this pool."
+                    : "This person should use the shared pool link to confirm and claim this member slot."}
+                </p>
               </div>
 
               {/* Info Box */}
@@ -502,21 +502,6 @@ export default function AdminPoolView({
           </div>
         </>
       )}
-      {/* Join Pool Modal */}
-      <JoinPoolModal 
-        isOpen={isJoinModalOpen} 
-        onClose={() => setIsJoinModalOpen(false)} 
-        poolId={pool.id}
-        poolName={pool.title}
-        poolDescription="You've been invited to contribute"
-        adminName={selectedMember?.name}
-        perPersonAmount={Number(pool.settings?.perPersonAmount || pool.perPerson?.replace(/[^0-9]/g, '') || 1000)}
-        requiredFields={pool.requiredFields}
-        userName={selectedMember?.name || "Member"}
-        onConfirm={handleMemberStatusChange}
-        onContribute={handleMemberStatusChange}
-        onBackToDashboard={handleMemberStatusChange}
-      />
     </div>
   );
 }

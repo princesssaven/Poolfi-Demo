@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/src/lib/db";
 import {
   poolMembers,
@@ -38,11 +38,34 @@ function getDaysLeft(deadline: Date) {
 
 function getPoolMetrics(pool: DatabasePool, members: DatabasePoolMember[]) {
   const paidCount = members.filter((member) => member.status === "paid").length;
+  const expectedCount = members.filter((member) => member.status === "expected").length;
   const totalMembers = members.length;
-  const pendingCount = Math.max(totalMembers - paidCount, 0);
+  const pendingCount = Math.max(totalMembers - paidCount - expectedCount, 0);
   const raised = paidCount * pool.perPersonAmount;
 
-  return { paidCount, pendingCount, raised, totalMembers };
+  return { expectedCount, paidCount, pendingCount, raised, totalMembers };
+}
+
+function formatMemberDate(value: Date) {
+  return value.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function buildInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("") || "PF";
+}
+
+function buildMemberColor(index: number) {
+  const colors = ["#1b4fd8", "#12b76a", "#f79009", "#6b7280", "#7c3aed", "#0f766e"];
+  return colors[index % colors.length];
 }
 
 export async function getPublicPoolBySlug(slug: string) {
@@ -51,6 +74,7 @@ export async function getPublicPoolBySlug(slug: string) {
       pool: pools,
       firstName: users.firstName,
       lastName: users.lastName,
+      pseudonym: users.pseudonym,
     })
     .from(pools)
     .leftJoin(users, eq(pools.ownerId, users.id))
@@ -61,14 +85,15 @@ export async function getPublicPoolBySlug(slug: string) {
     return null;
   }
 
-  const { pool, firstName, lastName } = result;
+  const { pool, firstName, lastName, pseudonym } = result;
   const adminName =
-    [firstName, lastName].filter(Boolean).join(" ") || "Anonymous";
+    [firstName, lastName].filter(Boolean).join(" ") || pseudonym || "Creator";
 
   const members = await getDb()
     .select()
     .from(poolMembers)
-    .where(eq(poolMembers.poolId, pool.id));
+    .where(eq(poolMembers.poolId, pool.id))
+    .orderBy(desc(poolMembers.invitedAt));
 
   const metrics = getPoolMetrics(pool, members);
   const categoryMeta = getCategoryMeta(pool.category);
@@ -79,12 +104,29 @@ export async function getPublicPoolBySlug(slug: string) {
     closesDate: formatDate(pool.deadline),
     daysLeft: getDaysLeft(pool.deadline),
     description: pool.description,
+    expectedCount: metrics.expectedCount,
     id: pool.id,
     isCompleted: pool.status === "completed",
+    members: members.map((member, index) => ({
+      bgColor: buildMemberColor(index),
+      isCreator: member.contributorUserId === pool.ownerId,
+      info:
+        member.status === "paid" && member.paidAt
+          ? `${member.customFieldValue || member.phone || "Member"} · Paid ${formatMemberDate(
+              member.paidAt
+            )}`
+          : member.status === "expected"
+            ? `${member.customFieldValue || member.phone || "Member"} · Expected`
+            : `${member.customFieldValue || member.phone || "Member"} · Pending`,
+      initials: buildInitials(member.name),
+      name: member.name,
+      status: member.status === "paid" ? "paid" : member.status === "expected" ? "expected" : "pending",
+    })),
     name: pool.name,
     paidCount: metrics.paidCount,
     pendingCount: metrics.pendingCount,
     perPersonAmount: pool.perPersonAmount,
+    poolLink: `/p/${pool.slug}`,
     raised: metrics.raised,
     targetAmount: pool.targetAmount,
     totalMembers: metrics.totalMembers,

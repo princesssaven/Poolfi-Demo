@@ -92,7 +92,7 @@ function IdentityStep({
           </p>
           <div className="text-[#6b7280] text-[13px] leading-snug font-['DM_Sans',sans-serif]">
             <p className="mb-1">{poolDescription}</p>
-            <p>Admin by {adminName}</p>
+            <p>Created by {adminName}</p>
           </div>
         </div>
       </div>
@@ -250,7 +250,7 @@ export default function JoinPoolModal({
   poolId,
   poolName = "Princess Saven",
   poolDescription = "Amaka's wedding is coming up and we need to surprise her",
-  adminName = "Chidi Nwosu..",
+  adminName = "Creator",
   perPersonAmount = 1000,
   requiredFields = [],
   walletBalance = 31500,

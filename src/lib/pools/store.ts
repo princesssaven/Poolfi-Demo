@@ -23,6 +23,9 @@ interface CreatePoolInput {
   milestones: Array<{ label: string; percentage: string }>;
   name: string;
   ownerId: string;
+  ownerName?: string;
+  ownerPhone?: string;
+  ownerPseudonym?: string;
   perPersonAmount: number;
   startDate: Date;
   takeAllAtClose: boolean;
@@ -139,9 +142,60 @@ function normalizeIdentityValue(value: string) {
   return value.trim().toLowerCase();
 }
 
+function normalizeNameValue(value: string) {
+  return normalizeIdentityValue(value).replace(/\s+/g, " ");
+}
+
 function normalizePhoneValue(value: string) {
   const digits = value.replace(/\D/g, "");
   return digits || normalizeIdentityValue(value);
+}
+
+function buildUserDisplayName(
+  user:
+    | {
+        firstName?: string | null;
+        lastName?: string | null;
+        pseudonym?: string | null;
+      }
+    | null
+    | undefined
+) {
+  if (!user) {
+    return "";
+  }
+
+  const fullName = [user.firstName, user.lastName]
+    .map((value) => value?.trim())
+    .filter(Boolean)
+    .join(" ");
+
+  return fullName || user.pseudonym?.trim() || "";
+}
+
+function isCreatorMemberCandidate(input: {
+  memberName: string;
+  memberPhone?: string | null;
+  ownerName?: string | null;
+  ownerPhone?: string | null;
+  ownerPseudonym?: string | null;
+}) {
+  const memberName = normalizeNameValue(input.memberName);
+  const memberPhone = input.memberPhone?.trim()
+    ? normalizePhoneValue(input.memberPhone)
+    : "";
+  const ownerPhone = input.ownerPhone?.trim()
+    ? normalizePhoneValue(input.ownerPhone)
+    : "";
+  const ownerNames = [input.ownerName, input.ownerPseudonym]
+    .map((value) => normalizeNameValue(value ?? ""))
+    .filter(Boolean);
+
+  if (memberPhone && ownerPhone) {
+    return memberPhone === ownerPhone;
+  }
+
+  return Boolean(memberName && ownerNames.includes(memberName));
 }
 
 function getRequiredMemberFields(pool: DatabasePool) {
@@ -271,6 +325,38 @@ async function createPoolActivity(input: {
 
 export async function createPool(input: CreatePoolInput) {
   const { shareCode, slug } = buildPoolSlug(input.name);
+  let creatorMemberAdded = false;
+  const membersToCreate = input.members.reduce<
+    Array<{ custom: string; isCreator: boolean; name: string; phone: string }>
+  >((members, member) => {
+    const normalizedMember = {
+      custom: member.custom.trim(),
+      name: member.name.trim(),
+      phone: member.phone.trim(),
+    };
+
+    if (!normalizedMember.name) {
+      return members;
+    }
+
+    const isCreator =
+      !creatorMemberAdded &&
+      isCreatorMemberCandidate({
+        memberName: normalizedMember.name,
+        memberPhone: normalizedMember.phone,
+        ownerName: input.ownerName,
+        ownerPhone: input.ownerPhone,
+        ownerPseudonym: input.ownerPseudonym,
+      });
+
+    if (isCreator) {
+      creatorMemberAdded = true;
+    }
+
+    members.push({ ...normalizedMember, isCreator });
+    return members;
+  }, []);
+
   const [pool] = await getDb()
     .insert(pools)
     .values({
@@ -305,12 +391,13 @@ export async function createPool(input: CreatePoolInput) {
     })
     .returning();
 
-  if (input.members.length > 0) {
+  if (membersToCreate.length > 0) {
     await getDb().insert(poolMembers).values(
-      input.members.map((member) => ({
-        customFieldValue: member.custom.trim(),
-        name: member.name.trim(),
-        phone: member.phone.trim(),
+      membersToCreate.map((member) => ({
+        contributorUserId: member.isCreator ? input.ownerId : null,
+        customFieldValue: member.custom,
+        name: member.name,
+        phone: member.phone,
         poolId: pool.id,
         status: "expected",
       }))
@@ -321,9 +408,9 @@ export async function createPool(input: CreatePoolInput) {
     createPoolActivity({
       actorUserId: input.ownerId,
       kind: "pool_created",
-      message: `Pool created — ${input.members.length} member slots pre-loaded`,
+      message: `Pool created — ${membersToCreate.length} member slots pre-loaded`,
       meta: {
-        members: input.members.length,
+        members: membersToCreate.length,
         targetAmount: input.targetAmount,
       },
       poolId: pool.id,
@@ -686,13 +773,28 @@ export async function getPoolDashboardViewData(poolId: string, ownerId: string) 
     return null;
   }
 
-  const members = await getMembersForPool(pool.id);
-  const activities = await getActivitiesForPool(pool.id);
+  const [members, activities, owner] = await Promise.all([
+    getMembersForPool(pool.id),
+    getActivitiesForPool(pool.id),
+    getDb()
+      .select({
+        firstName: users.firstName,
+        lastName: users.lastName,
+        phone: users.phone,
+        pseudonym: users.pseudonym,
+      })
+      .from(users)
+      .where(eq(users.id, pool.ownerId))
+      .limit(1)
+      .then((rows) => rows[0]),
+  ]);
   const metrics = getPoolMetrics(pool, members);
   const categoryMeta = getCategoryMeta(pool.category);
   const isCompleted = pool.status === "completed";
+  const adminName = buildUserDisplayName(owner) || "Creator";
 
   return {
+    adminName,
     activities: activities.map((activity) => ({
       dotColor:
         activity.kind === "reminders_sent"
@@ -717,6 +819,15 @@ export async function getPoolDashboardViewData(poolId: string, ownerId: string) 
     requiredFields: getRequiredMemberFields(pool),
     members: members.map((member, index) => ({
       bgColor: buildMemberColor(index),
+      isCreator:
+        member.contributorUserId === pool.ownerId ||
+        isCreatorMemberCandidate({
+          memberName: member.name,
+          memberPhone: member.phone,
+          ownerName: adminName,
+          ownerPhone: owner?.phone,
+          ownerPseudonym: owner?.pseudonym,
+        }),
       info:
         member.status === "paid" && member.paidAt
           ? `${member.customFieldValue || member.phone || "Member"} · Paid ${formatDate(
@@ -933,6 +1044,10 @@ export async function contributeToPool(input: {
     return { success: false, error: "Pool not found." } as const;
   }
 
+  if (pool.ownerId === input.userId) {
+    return { success: false, error: "Creators already manage their own pools." } as const;
+  }
+
   if (pool.status !== "active") {
     return { success: false, error: "This pool is no longer accepting contributions." } as const;
   }
@@ -1071,6 +1186,10 @@ export async function joinPoolPayLater(input: {
 
   if (!pool) {
     return { success: false, error: "Pool not found." } as const;
+  }
+
+  if (pool.ownerId === input.userId) {
+    return { success: false, error: "Creators already manage their own pools." } as const;
   }
 
   if (pool.status !== "active") {

@@ -15,12 +15,14 @@ interface PoolMember {
   bgColor: string;
   info: string;
   initials: string;
+  isCreator?: boolean;
   name: string;
   status: "paid" | "pending" | "expected";
 }
 
 interface PoolResponse {
   activities: PoolActivityItem[];
+  adminName: string;
   category: string;
   closesDate: string;
   daysLeft: number;
@@ -154,6 +156,7 @@ export default function PoolDashboardPage() {
       <AdminPoolView
         pool={{
           id: pool.id,
+          adminName: pool.adminName,
           title: pool.title,
           category: pool.category,
           closesDate: pool.closesDate,
@@ -177,9 +180,6 @@ export default function PoolDashboardPage() {
         onClosePool={() => setSuccessMessage("Close pool feature coming soon.")}
         onCancelPool={() => setSuccessMessage("Cancel pool feature coming soon.")}
         onPausePool={() => setSuccessMessage("Pause pool feature coming soon.")}
-        onMemberStatusChange={() => {
-          void loadPool();
-        }}
       />
     </div>
   );

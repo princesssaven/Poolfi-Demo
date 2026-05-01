@@ -6,6 +6,7 @@ export interface AppUser {
   image: string | null;
   initials: string;
   lastName: string;
+  phone: string;
   pseudonym: string;
 }
 
@@ -16,6 +17,7 @@ interface UserLike {
   image?: string | null;
   lastName?: string | null;
   name?: string | null;
+  phone?: string | null;
   pseudonym?: string | null;
 }
 
@@ -63,6 +65,7 @@ export function normalizeAppUser(user: UserLike | null | undefined): AppUser | n
     image: user.image ?? null,
     initials: getInitials(firstName, lastName, displayName || email || "PF"),
     lastName,
+    phone: user.phone?.trim() ?? "",
     pseudonym: derivedPseudonym,
   };
 }

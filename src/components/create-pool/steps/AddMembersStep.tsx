@@ -14,6 +14,11 @@ interface MembersData {
 }
 
 interface AddMembersStepProps {
+  creator?: {
+    displayName: string;
+    phone?: string;
+    pseudonym?: string;
+  } | null;
   data: MembersData;
   onChange: (data: MembersData) => void;
   onNext: () => void;
@@ -23,6 +28,7 @@ interface AddMembersStepProps {
 const identityFieldOptions = ["Full Name", "Matric. No", "Phone No"];
 
 export default function AddMembersStep({
+  creator,
   data,
   onChange,
   onNext,
@@ -59,7 +65,7 @@ export default function AddMembersStep({
         const workbook = XLSX.read(result, { type: "array" });
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
-        const json = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+        const json = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as unknown[][];
 
         parsedMembers = json
           .map((row) => ({
@@ -131,6 +137,30 @@ export default function AddMembersStep({
 
   const allFields = [...data.identityFields, ...data.customFields];
 
+  const isCreatorMember = (member: { name: string; phone: string }) => {
+    if (!creator) {
+      return false;
+    }
+
+    const normalizeName = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
+    const normalizePhone = (value: string) => {
+      const digits = value.replace(/\D/g, "");
+      return digits || value.trim().toLowerCase();
+    };
+    const memberName = normalizeName(member.name);
+    const memberPhone = member.phone.trim() ? normalizePhone(member.phone) : "";
+    const creatorPhone = creator.phone?.trim() ? normalizePhone(creator.phone) : "";
+    const creatorNames = [creator.displayName, creator.pseudonym]
+      .map((value) => normalizeName(value ?? ""))
+      .filter(Boolean);
+
+    if (memberPhone && creatorPhone) {
+      return memberPhone === creatorPhone;
+    }
+
+    return Boolean(memberName && creatorNames.includes(memberName));
+  };
+
   const handleNext = () => {
     if (allFields.length === 0) {
       setShowError(true);
@@ -138,6 +168,8 @@ export default function AddMembersStep({
     }
     onNext();
   };
+
+  const creatorMemberIndex = data.members.findIndex(isCreatorMember);
 
   return (
     <div className="rounded-[20px] border border-border bg-white overflow-hidden">
@@ -326,6 +358,11 @@ export default function AddMembersStep({
               {data.members.map((m, i) => (
                 <div key={i} className="flex items-center gap-3 px-4 py-2 bg-bg-page rounded-lg text-sm font-card">
                   <span className="text-text-dark font-bold">{m.name}</span>
+                  {i === creatorMemberIndex ? (
+                    <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-white">
+                      You
+                    </span>
+                  ) : null}
                   <span className="text-text-muted">{m.phone}</span>
                   {m.custom && <span className="text-text-muted">{m.custom}</span>}
                 </div>

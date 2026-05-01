@@ -7,20 +7,30 @@ import PublicPoolView from "@/src/components/pool/PublicPoolView";
 import LogoIcon from "@/src/assets/icons/logo.svg";
 
 interface PublicPoolData {
+  adminName?: string;
   category: string;
   closesDate: string;
   daysLeft: number;
   description: string;
+  expectedCount?: number;
   id: string;
   isCompleted: boolean;
+  members?: Array<{
+    bgColor: string;
+    info: string;
+    initials: string;
+    isCreator?: boolean;
+    name: string;
+    status: "paid" | "pending" | "expected";
+  }>;
   name: string;
+  paidCount?: number;
+  pendingCount?: number;
   perPersonAmount: number;
+  poolLink?: string;
   raised: number;
   targetAmount: number;
   totalMembers: number;
-  adminName?: string;
-  paidCount?: number;
-  pendingCount?: number;
 }
 
 export default function PublicPoolPage() {

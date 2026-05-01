@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import StepProgress from "@/src/components/ui/StepProgress";
 import LivePreview from "@/src/components/create-pool/LivePreview";
@@ -8,6 +8,7 @@ import PoolBasicsStep from "@/src/components/create-pool/steps/PoolBasicsStep";
 import RulesFieldsStep from "@/src/components/create-pool/steps/RulesFieldsStep";
 import AddMembersStep from "@/src/components/create-pool/steps/AddMembersStep";
 import ReviewLaunchStep from "@/src/components/create-pool/steps/ReviewLaunchStep";
+import type { AppUser } from "@/src/lib/auth/user";
 
 const steps = [
   { label: "Pool Basics", number: 1 },
@@ -27,6 +28,7 @@ function slugifyPoolName(value: string) {
 export default function CreatePoolPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [isLaunchingPool, setIsLaunchingPool] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -60,6 +62,27 @@ export default function CreatePoolPage() {
     customFields: [] as string[],
     members: [] as { name: string; phone: string; custom: string }[],
   });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCurrentUser = async () => {
+      const response = await fetch("/api/auth/state", { cache: "no-store" });
+      const payload = (await response.json().catch(() => null)) as
+        | { user?: AppUser | null }
+        | null;
+
+      if (isMounted) {
+        setCurrentUser(payload?.user ?? null);
+      }
+    };
+
+    void loadCurrentUser();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const formatDeadline = (dateStr: string) => {
     if (!dateStr) return "";
@@ -163,6 +186,7 @@ export default function CreatePoolPage() {
           )}
           {currentStep === 3 && (
             <AddMembersStep
+              creator={currentUser}
               data={membersData}
               onChange={setMembersData}
               onNext={() => setCurrentStep(4)}
