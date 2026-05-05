@@ -219,7 +219,7 @@ export default function VerifyPage() {
 
           <div className="mt-6 flex flex-col gap-[13px]">
             <div
-              className="grid grid-cols-3 gap-3 sm:grid-cols-6 sm:gap-[17px]"
+              className="flex w-full overflow-hidden rounded-[10px] sm:w-fit"
               onPaste={handlePaste}
               role="group"
               aria-label="Verification code"
@@ -237,7 +237,7 @@ export default function VerifyPage() {
                   onChange={(e) => handleInput(i, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(i, e)}
                   aria-label={`Digit ${i + 1}`}
-                  className={`h-14 w-full rounded-[10px] border text-center font-card text-2xl font-bold outline-none transition-all duration-200 sm:h-[66px] sm:w-[112px] ${
+                  className={`-ml-px h-12 min-w-0 flex-1 rounded-none border text-center font-card text-xl font-bold outline-none transition-all duration-200 first:ml-0 first:rounded-l-[10px] last:rounded-r-[10px] focus:z-10 sm:h-[58px] sm:w-[96px] sm:flex-none sm:text-[22px] ${
                     digit
                       ? "border-primary bg-primary-light text-primary"
                       : "border-border bg-white text-text-dark"
