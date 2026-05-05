@@ -1,3 +1,5 @@
+import nodemailer from "nodemailer";
+
 interface SendEmailInput {
   html: string;
   subject: string;
@@ -5,59 +7,59 @@ interface SendEmailInput {
   to: string;
 }
 
-function getResendConfig() {
+function getSmtpConfig() {
   return {
-    apiKey: process.env.RESEND_API_KEY,
-    from: process.env.EMAIL_FROM,
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+    from: process.env.EMAIL_FROM || process.env.GMAIL_USER,
     replyTo: process.env.EMAIL_REPLY_TO,
   };
 }
 
 export function isEmailConfigured() {
-  const { apiKey, from } = getResendConfig();
-  return Boolean(apiKey && from);
+  const { user, pass } = getSmtpConfig();
+  return Boolean(user && pass);
 }
 
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+});
+
 export async function sendEmail(input: SendEmailInput) {
-  const { apiKey, from, replyTo } = getResendConfig();
+  const { user, pass, from, replyTo } = getSmtpConfig();
 
-  // Local delivery is logged until a verified sender domain is configured.
-  if (process.env.NODE_ENV !== "production" || from?.includes("resend.dev")) {
-    console.log("\n=======================================================");
-    console.log("📧 EMAIL LOGGED (Development Mode)");
-    console.log(`To:      ${input.to}`);
-    console.log(`Subject: ${input.subject}`);
-    console.log(`Message: ${input.text}`);
-    console.log("=======================================================\n");
-    return { success: true, development: true };
+  // If Gmail credentials are missing, fall back to console logging in
+  // development; throw in production so the caller can surface a 502.
+  if (!user || !pass) {
+    if (process.env.NODE_ENV !== "production") {
+      console.log("\n=======================================================");
+      console.log("📧 EMAIL LOGGED (Gmail SMTP not configured)");
+      console.log(`To:      ${input.to}`);
+      console.log(`Subject: ${input.subject}`);
+      console.log(`Message: ${input.text}`);
+      console.log("=======================================================\n");
+      return { success: true, development: true };
+    }
+    throw new Error(
+      "Email delivery is not configured. Set GMAIL_USER and GMAIL_APP_PASSWORD."
+    );
   }
 
-  if (!apiKey || !from) {
-    throw new Error("Email delivery is not configured. Set RESEND_API_KEY and EMAIL_FROM.");
-  }
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      html: input.html,
-      reply_to: replyTo ? [replyTo] : undefined,
-      subject: input.subject,
-      text: input.text,
-      to: [input.to],
-    }),
+  const info = await transporter.sendMail({
+    from: from || user,
+    to: input.to,
+    subject: input.subject,
+    text: input.text,
+    html: input.html,
+    replyTo: replyTo || undefined,
   });
 
-  if (!response.ok) {
-    const payload = await response.text();
-    throw new Error(`Resend error: ${response.status} ${payload}`);
-  }
-
-  return response.json().catch(() => null);
+  console.log("📧 Email sent:", info.messageId);
+  return { success: true, messageId: info.messageId };
 }
 
 function wrapEmailTemplate(title: string, intro: string, content: string) {

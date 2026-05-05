@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         message:
-          "Email delivery isn't configured yet. Add RESEND_API_KEY and EMAIL_FROM to send verification emails.",
+          "Email delivery isn't configured yet. Add GMAIL_USER and GMAIL_APP_PASSWORD to send verification emails.",
       },
       { status: 503 }
     );

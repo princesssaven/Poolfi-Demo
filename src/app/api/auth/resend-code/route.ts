@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         message:
-          "Email delivery isn't configured yet. Add RESEND_API_KEY and EMAIL_FROM first.",
+          "Email delivery isn't configured yet. Add GMAIL_USER and GMAIL_APP_PASSWORD first.",
       },
       { status: 503 }
     );
