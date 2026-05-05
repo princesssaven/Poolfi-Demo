@@ -86,6 +86,16 @@ export default function PoolDashboardPage() {
     return () => { isMounted = false; };
   }, [poolId]);
 
+  useEffect(() => {
+    if (!successMessage) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setSuccessMessage("");
+    }, 3000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [successMessage]);
+
   const handleSendReminders = async () => {
     setErrorMessage("");
     setSuccessMessage("");
