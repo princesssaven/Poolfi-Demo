@@ -140,6 +140,12 @@ export const pools = pgTable(
       .default(sql`'[]'::jsonb`),
     approversCount: text("approvers_count"),
     referenceLink: text("reference_link"),
+    twContractId: text("tw_contract_id"),
+    twEscrowType: text("tw_escrow_type"),
+    twEscrowStatus: text("tw_escrow_status").notNull().default("not_created"),
+    twLastError: text("tw_last_error"),
+    twLastSyncedAt: timestamp("tw_last_synced_at", { withTimezone: true }),
+    twLastTxHash: text("tw_last_tx_hash"),
   },
   (table) => [uniqueIndex("pools_slug_idx").on(table.slug)]
 );

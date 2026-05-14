@@ -32,7 +32,21 @@ export async function POST(
   }
 
   const { id } = await params;
-  const pool = await updatePoolStatus(id, user.id, body.action);
+  let pool;
+
+  try {
+    pool = await updatePoolStatus(id, user.id, body.action);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Pool status update failed.",
+      },
+      { status: 502 }
+    );
+  }
 
   if (!pool) {
     return NextResponse.json({ message: "Pool not found." }, { status: 404 });

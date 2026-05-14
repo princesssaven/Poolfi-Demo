@@ -45,6 +45,16 @@ Add these in Google Cloud Console:
 - `npm run db:push` pushes the current schema directly to the database.
 - `npm run db:studio` opens Drizzle Studio.
 
+## Trustless Work Escrow
+
+PoolFi can create, fund, and release Trustless Work escrows for pools.
+
+- Add `TRUSTLESS_WORK_API_KEY` and `TRUSTLESS_WORK_API_URL`.
+- Keep `STELLAR_NETWORK=TESTNET` while using `https://dev.api.trustlesswork.com`.
+- The server-signed MVP defaults every escrow role to `NEXT_PUBLIC_STELLAR_RECEIVER_ADDRESS`.
+- Override role wallets with the `TRUSTLESS_WORK_*_ADDRESS` values in `.env.example` before production.
+- Run `npm run db:migrate` or `npm run db:push` after pulling the Trustless Work lifecycle fields.
+
 ## Current MVP Auth Flow
 
 - Email sign-up persists users in Postgres after verification and PIN setup.

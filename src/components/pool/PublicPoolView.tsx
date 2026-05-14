@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 interface PublicPoolMember {
@@ -49,14 +49,20 @@ export default function PublicPoolView({ pool }: PublicPoolViewProps) {
   const openDrawer = (member: PublicPoolMember) => {
     setSelectedMember(member);
     setDrawerOpen(true);
-    document.body.style.overflow = "hidden";
   };
 
   const closeDrawer = () => {
     setDrawerOpen(false);
-    document.body.style.overflow = "";
     setTimeout(() => setSelectedMember(null), 300);
   };
+
+  useEffect(() => {
+    document.body.style.overflow = drawerOpen ? "hidden" : "";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [drawerOpen]);
 
   const poolPath = pool.poolLink ?? `/p/${pool.id}`;
   const fullUrl =

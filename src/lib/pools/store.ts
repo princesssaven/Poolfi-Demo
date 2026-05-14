@@ -10,6 +10,13 @@ import {
   type DatabasePoolMember,
 } from "@/src/lib/db/schema";
 import { getExchangeRate } from "@/src/lib/busha/client";
+import {
+  fundPoolEscrow,
+  initializePoolEscrow,
+  isTrustlessWorkConfigured,
+  releasePoolEscrow,
+  type TrustlessWorkEscrowType,
+} from "@/src/lib/trustless-work/client";
 
 interface CreatePoolInput {
   autoClose: boolean;
@@ -76,6 +83,29 @@ function slugifyPoolName(value: string) {
 
 function formatCurrency(amount: number) {
   return `₦${amount.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function getPoolEscrowType(pool: Pick<DatabasePool, "milestoneWithdrawals" | "milestones" | "twEscrowType" | "type">): TrustlessWorkEscrowType {
+  if (pool.twEscrowType === "single-release" || pool.twEscrowType === "multi-release") {
+    return pool.twEscrowType;
+  }
+
+  if (pool.type === "impact") {
+    return "multi-release";
+  }
+
+  return pool.milestoneWithdrawals && pool.milestones.length > 1
+    ? "multi-release"
+    : "single-release";
+}
+
+function getPoolMilestoneCount(pool: Pick<DatabasePool, "milestones">) {
+  return Math.max(pool.milestones.length, 1);
+}
+
+function formatTrustlessWorkError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.slice(0, 1000);
 }
 
 // Fallback exchange rate for USDC to NGN if Busha API fails or is not configured
@@ -325,6 +355,12 @@ async function createPoolActivity(input: {
 
 export async function createPool(input: CreatePoolInput) {
   const { shareCode, slug } = buildPoolSlug(input.name);
+  const twEscrowType = getPoolEscrowType({
+    milestoneWithdrawals: input.milestoneWithdrawals,
+    milestones: input.milestones,
+    twEscrowType: null,
+    type: input.type ?? "goal",
+  });
   let creatorMemberAdded = false;
   const membersToCreate = input.members.reduce<
     Array<{ custom: string; isCreator: boolean; name: string; phone: string }>
@@ -388,6 +424,8 @@ export async function createPool(input: CreatePoolInput) {
       evidenceUrls: input.evidenceUrls ?? [],
       approversCount: input.approversCount,
       referenceLink: input.referenceLink,
+      twEscrowStatus: isTrustlessWorkConfigured() ? "pending_deploy" : "not_configured",
+      twEscrowType,
     })
     .returning();
 
@@ -424,6 +462,63 @@ export async function createPool(input: CreatePoolInput) {
       userId: input.ownerId,
     }),
   ]);
+
+  if (isTrustlessWorkConfigured()) {
+    // Initialize Trustless Work escrow contract in the background so pool creation stays responsive.
+    initializePoolEscrow({
+      milestoneWithdrawals: input.milestoneWithdrawals,
+      milestones: input.milestones,
+      poolDescription: pool.description,
+      poolId: pool.id,
+      poolName: pool.name,
+      poolType: input.type ?? "goal",
+      targetAmountNgn: input.targetAmount,
+    })
+      .then(async (result) => {
+        await getDb()
+          .update(pools)
+          .set({
+            twContractId: result.contractId,
+            twEscrowStatus: "deployed",
+            twEscrowType: result.escrowType,
+            twLastError: null,
+            twLastSyncedAt: new Date(),
+            twLastTxHash: result.txHash ?? null,
+          })
+          .where(eq(pools.id, pool.id));
+
+        await createPoolActivity({
+          actorUserId: input.ownerId,
+          kind: "tw_escrow_deployed",
+          message: `Trustless Work ${result.escrowType} escrow deployed`,
+          meta: {
+            contractId: result.contractId,
+            txHash: result.txHash ?? null,
+          },
+          poolId: pool.id,
+        });
+      })
+      .catch(async (err: unknown) => {
+        const error = formatTrustlessWorkError(err);
+
+        await getDb()
+          .update(pools)
+          .set({
+            twEscrowStatus: "deploy_failed",
+            twLastError: error,
+            twLastSyncedAt: new Date(),
+          })
+          .where(eq(pools.id, pool.id));
+
+        await createPoolActivity({
+          actorUserId: input.ownerId,
+          kind: "tw_escrow_failed",
+          message: "Trustless Work escrow deployment failed",
+          meta: { error },
+          poolId: pool.id,
+        });
+      });
+  }
 
   return {
     id: pool.id,
@@ -955,6 +1050,67 @@ export async function updatePoolStatus(
     return null;
   }
 
+  const twReleaseState: Partial<Pick<
+    DatabasePool,
+    "twEscrowStatus" | "twLastError" | "twLastSyncedAt" | "twLastTxHash"
+  >> = {};
+
+  if (
+    action === "close" &&
+    isTrustlessWorkConfigured() &&
+    pool.twContractId &&
+    pool.twEscrowStatus !== "released"
+  ) {
+    try {
+      const results = await releasePoolEscrow({
+        contractId: pool.twContractId,
+        escrowType: getPoolEscrowType(pool),
+        milestoneCount: getPoolMilestoneCount(pool),
+      });
+      const finalTxHash = results[results.length - 1]?.txHash ?? null;
+
+      twReleaseState.twEscrowStatus = "released";
+      twReleaseState.twLastError = null;
+      twReleaseState.twLastSyncedAt = new Date();
+      twReleaseState.twLastTxHash = finalTxHash;
+
+      await createPoolActivity({
+        actorUserId: ownerId,
+        kind: "tw_escrow_released",
+        message: "Trustless Work escrow funds released",
+        meta: {
+          contractId: pool.twContractId,
+          txHash: finalTxHash,
+        },
+        poolId,
+      });
+    } catch (err: unknown) {
+      const error = formatTrustlessWorkError(err);
+
+      await getDb()
+        .update(pools)
+        .set({
+          twEscrowStatus: "release_failed",
+          twLastError: error,
+          twLastSyncedAt: new Date(),
+        })
+        .where(eq(pools.id, pool.id));
+
+      await createPoolActivity({
+        actorUserId: ownerId,
+        kind: "tw_escrow_release_failed",
+        message: "Trustless Work escrow release failed",
+        meta: {
+          contractId: pool.twContractId,
+          error,
+        },
+        poolId,
+      });
+
+      throw new Error(`Trustless Work release failed: ${error}`);
+    }
+  }
+
   const nextState =
     action === "close"
       ? {
@@ -982,7 +1138,7 @@ export async function updatePoolStatus(
 
   const [updatedPool] = await getDb()
     .update(pools)
-    .set(nextState)
+    .set({ ...nextState, ...twReleaseState })
     .where(eq(pools.id, pool.id))
     .returning();
 
@@ -1153,6 +1309,61 @@ export async function contributeToPool(input: {
       userId: input.userId,
     }),
   ]);
+
+  if (isTrustlessWorkConfigured() && pool.twContractId) {
+    try {
+      const result = await fundPoolEscrow({
+        amountNgn: input.amountNgn,
+        contractId: pool.twContractId,
+        escrowType: getPoolEscrowType(pool),
+      });
+
+      await db
+        .update(pools)
+        .set({
+          twEscrowStatus: "funding_active",
+          twLastError: null,
+          twLastSyncedAt: new Date(),
+          twLastTxHash: result.txHash ?? null,
+        })
+        .where(eq(pools.id, pool.id));
+
+      await createPoolActivity({
+        actorUserId: input.userId,
+        kind: "tw_escrow_funded",
+        message: `Trustless Work escrow funded for ${contributionLabel}`,
+        meta: {
+          amountNgn: input.amountNgn,
+          contractId: pool.twContractId,
+          txHash: result.txHash ?? null,
+        },
+        poolId: input.poolId,
+      });
+    } catch (err: unknown) {
+      const error = formatTrustlessWorkError(err);
+
+      await db
+        .update(pools)
+        .set({
+          twEscrowStatus: "fund_failed",
+          twLastError: error,
+          twLastSyncedAt: new Date(),
+        })
+        .where(eq(pools.id, pool.id));
+
+      await createPoolActivity({
+        actorUserId: input.userId,
+        kind: "tw_escrow_fund_failed",
+        message: "Trustless Work escrow funding failed",
+        meta: {
+          amountNgn: input.amountNgn,
+          contractId: pool.twContractId,
+          error,
+        },
+        poolId: input.poolId,
+      });
+    }
+  }
 
   // 7. Return updated balance
   const [updatedUser] = await db
