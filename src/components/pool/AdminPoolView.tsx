@@ -46,6 +46,8 @@ interface AdminPoolViewProps {
       status: string;
       takeAllAtClose: boolean;
     };
+    twContractId?: string;
+    twEscrowStatus?: string;
   };
   onExportCsv: () => void;
   onSendReminders: () => void;
@@ -123,9 +125,24 @@ export default function AdminPoolView({
       <div className="bg-[#1b4fd8] text-white p-6 rounded-2xl flex flex-col gap-4 relative overflow-hidden shadow-lg">
         <div className="absolute top-0 right-0 size-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         
-        <div className="bg-[rgba(255,255,255,0.12)] border border-[rgba(255,255,255,0.2)] px-4 py-1 rounded-full w-fit flex items-center gap-2">
-          <span className="text-[12px]">🔒</span>
-          <span className="text-[11px] font-bold tracking-widest uppercase">{pool.category} · Private · Invite Only</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="bg-[rgba(255,255,255,0.12)] border border-[rgba(255,255,255,0.2)] px-4 py-1 rounded-full w-fit flex items-center gap-2">
+            <span className="text-[12px]">🔒</span>
+            <span className="text-[11px] font-bold tracking-widest uppercase">{pool.category} · Private · Invite Only</span>
+          </div>
+          {pool.twContractId && pool.twEscrowStatus !== "not_configured" ? (
+            <a
+              href={`https://viewer.trustlesswork.com/contract/${pool.twContractId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-fit items-center gap-2 rounded-full border border-[#00f0ff]/30 bg-[#00f0ff]/10 px-4 py-1 hover:bg-[#00f0ff]/20 transition-colors"
+            >
+              <span className="text-[12px]">⛓️</span>
+              <span className="text-[11px] font-bold uppercase tracking-widest text-[#00f0ff]">
+                Escrow Status: {pool.twEscrowStatus}
+              </span>
+            </a>
+          ) : null}
         </div>
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

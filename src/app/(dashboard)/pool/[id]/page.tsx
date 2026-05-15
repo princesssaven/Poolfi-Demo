@@ -47,6 +47,8 @@ interface PoolResponse {
   };
   title: string;
   totalMembers: number;
+  twContractId?: string;
+  twEscrowStatus?: string;
 }
 
 export default function PoolDashboardPage() {
@@ -183,6 +185,8 @@ export default function PoolDashboardPage() {
           poolLink: pool.poolLink,
           settings: pool.settings,
           expectedCount: pool.expectedCount,
+          twContractId: pool.twContractId,
+          twEscrowStatus: pool.twEscrowStatus,
         }}
         onExportCsv={handleExportCsv}
         onSendReminders={handleSendReminders}

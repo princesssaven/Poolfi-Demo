@@ -14,6 +14,8 @@ interface PoolHeaderProps {
   perPerson: string;
   category: string;
   stats: PoolStat[];
+  twContractId?: string;
+  twEscrowStatus?: string;
 }
 
 export default function PoolHeader({
@@ -22,6 +24,8 @@ export default function PoolHeader({
   perPerson,
   category,
   stats,
+  twContractId,
+  twEscrowStatus,
 }: PoolHeaderProps) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-primary p-5 sm:p-6">
@@ -39,6 +43,19 @@ export default function PoolHeader({
         <span>💰 {perPerson}</span>
         <span>·</span>
         <span>{category}</span>
+        {twContractId && twEscrowStatus !== "not_configured" ? (
+          <>
+            <span>·</span>
+            <a
+              href={`https://viewer.trustlesswork.com/contract/${twContractId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-full bg-[#00f0ff]/10 border border-[#00f0ff]/30 px-2 py-0.5 text-[#00f0ff] hover:bg-[#00f0ff]/20 transition-colors"
+            >
+              ⛓️ Escrow Status: {twEscrowStatus}
+            </a>
+          </>
+        ) : null}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

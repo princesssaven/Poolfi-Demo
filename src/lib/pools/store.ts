@@ -625,6 +625,8 @@ export async function getImpactPoolsViewData() {
       raised: paidCount * pool.perPersonAmount,
       status: pool.status,
       targetAmount: pool.targetAmount,
+      twContractId: pool.twContractId ?? undefined,
+      twEscrowStatus: pool.twEscrowStatus,
     };
   });
 }
@@ -959,6 +961,8 @@ export async function getPoolDashboardViewData(poolId: string, ownerId: string) 
     target: pool.targetAmount,
     title: pool.name,
     totalMembers: metrics.totalMembers,
+    twContractId: pool.twContractId ?? undefined,
+    twEscrowStatus: pool.twEscrowStatus,
   };
 }
 

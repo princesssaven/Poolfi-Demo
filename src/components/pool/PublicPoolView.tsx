@@ -30,6 +30,8 @@ interface PublicPoolData {
   raised: number;
   targetAmount: number;
   totalMembers: number;
+  twContractId?: string;
+  twEscrowStatus?: string;
 }
 
 interface PublicPoolViewProps {
@@ -107,11 +109,26 @@ export default function PublicPoolView({ pool }: PublicPoolViewProps) {
           <div className="relative z-10 flex flex-col gap-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <div className="mb-3 inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1">
-                  <span className="text-[12px]">🔒</span>
-                  <span className="text-[11px] font-bold uppercase tracking-widest">
-                    {pool.category} · Private · Invite Only
-                  </span>
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1">
+                    <span className="text-[12px]">🔒</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest">
+                      {pool.category} · Private · Invite Only
+                    </span>
+                  </div>
+                  {pool.twContractId && pool.twEscrowStatus !== "not_configured" ? (
+                    <a
+                      href={`https://viewer.trustlesswork.com/contract/${pool.twContractId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex w-fit items-center gap-2 rounded-full border border-[#00f0ff]/30 bg-[#00f0ff]/10 px-4 py-1 hover:bg-[#00f0ff]/20 transition-colors"
+                    >
+                      <span className="text-[12px]">⛓️</span>
+                      <span className="text-[11px] font-bold uppercase tracking-widest text-[#00f0ff]">
+                        Secured by Trustless Work
+                      </span>
+                    </a>
+                  ) : null}
                 </div>
                 <h1 className="mb-1 font-['Sora',sans-serif] text-[28px] font-extrabold leading-tight">
                   {pool.name}
